@@ -1,0 +1,46 @@
+edition = "2023";
+
+package mcpgw.v1;
+
+import "google/protobuf/descriptor.proto";
+import "google/protobuf/go_features.proto";
+
+option features.(pb.go).api_level = API_OPAQUE;
+option go_package = "github.com/ductone/protoc-gen-mcpgw/mcpgw/v1";
+
+// TODO(pquerna): register here
+// https://github.com/protocolbuffers/protobuf/blob/master/docs/options.md
+extend google.protobuf.ServiceOptions {
+  ServiceOptions service = 8650;
+}
+
+extend google.protobuf.MethodOptions {
+  MethodOptions method = 8651;
+}
+
+extend google.protobuf.FieldOptions {
+  FieldOptions field = 8652;
+}
+
+extend google.protobuf.MessageOptions {
+  MessageOptions message = 8653;
+}
+
+message MessageOptions {}
+
+message FieldOptions {
+  string description = 1;
+}
+
+message MethodOptions {
+  string title = 1;
+  string description = 2;
+  bool read_only_hint = 3;
+  bool destructive_hint = 4;
+  bool idempotent_hint = 5;
+  bool open_world_hint = 6;
+}
+
+message ServiceOptions {
+  bool enabled = 1;
+}

@@ -1,0 +1,13 @@
+version: v2
+managed:
+  enabled: true
+plugins:
+  - local: protoc-gen-go
+    out: example
+    opt: paths=source_relative
+  - local: protoc-gen-go-grpc
+    out: example
+    opt: paths=source_relative
+  - local: ./build/protoc-gen-mcpgw
+    out: example
+    opt: paths=source_relative

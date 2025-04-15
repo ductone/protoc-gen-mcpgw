@@ -1,0 +1,343 @@
+edition = "2023";
+
+package bookstore.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/go_features.proto";
+import "google/protobuf/timestamp.proto";
+import "mcpgw/v1/mcpgw.proto";
+
+option features.(pb.go).api_level = API_OPAQUE;
+option go_package = "github.com/ductone/protoc-gen-mcpgw/example/bookstore/v1";
+
+// A simple Bookstore API.
+//
+// The API manages shelves and books resources. Shelves contain books.
+service BookstoreService {
+  option (mcpgw.v1.service) = {enabled: true};
+  // Returns a list of all shelves in the bookstore.
+  rpc ListShelves(ListShelvesRequest) returns (ListShelvesResponse) {
+    option (mcpgw.v1.method) = {
+      title: "List Shelves"
+      description: "List all shelves in the bookstore"
+      read_only_hint: true
+      idempotent_hint: true
+    };
+  }
+  // Creates a new shelf in the bookstore.
+  rpc CreateShelf(CreateShelfRequest) returns (CreateShelfResponse) {
+    option (mcpgw.v1.method) = {
+      title: "Create Shelf"
+      description: "Create a new shelf in the bookstore"
+    };
+  }
+
+  // Deletes a shelf, including all books that are stored on the shelf.
+  rpc DeleteShelf(DeleteShelfRequest) returns (DeleteShelfResponse) {
+    option (mcpgw.v1.method) = {
+      title: "Delete Shelf"
+      description: "Delete a shelf in the bookstore"
+      destructive_hint: true
+    };
+  }
+
+  // Lists genres
+  rpc ListGenres(ListGenresRequest) returns (ListGenresResponse) {
+    option (mcpgw.v1.method) = {
+      title: "List Genres"
+      description: "List all genres in the bookstore"
+      read_only_hint: true
+    };
+  }
+
+  // Creates a new genre in the bookstore.
+  rpc CreateGenre(CreateGenreRequest) returns (CreateGenreResponse) {
+    option (mcpgw.v1.method) = {
+      title: "Create Genre"
+      description: "Create a new genre in the bookstore"
+    };
+  }
+
+  // Get a genre
+  rpc GetGenre(GetGenreRequest) returns (GetGenreResponse) {
+    option (mcpgw.v1.method) = {
+      title: "Get Genre"
+      description: "Get a genre in the bookstore"
+    };
+  }
+
+  // Deletes a genre.
+  rpc DeleteGenre(DeleteGenreRequest) returns (DeleteGenreResponse) {
+    option (mcpgw.v1.method) = {
+      title: "Delete Genre"
+      description: "Delete a genre in the bookstore"
+      destructive_hint: true
+    };
+  }
+
+  // Creates a new book.
+  rpc CreateBook(CreateBookRequest) returns (CreateBookResponse) {
+    option (mcpgw.v1.method) = {
+      title: "Create Book"
+      description: "Create a new book in the bookstore"
+      destructive_hint: true
+      idempotent_hint: true
+      open_world_hint: true
+    };
+  }
+
+  // Returns a specific book.
+  rpc GetBook(GetBookRequest) returns (GetBookResponse) {
+    option (mcpgw.v1.method) = {
+      title: "Get Book"
+      description: "Get a book in the bookstore"
+      read_only_hint: true
+      idempotent_hint: true
+      open_world_hint: true
+    };
+  }
+  rpc ListBooks(ListBooksRequest) returns (ListBooksResponse) {
+    option (mcpgw.v1.method) = {
+      title: "List Books"
+      description: "List all books in the bookstore"
+      read_only_hint: true
+      idempotent_hint: true
+      open_world_hint: true
+    };
+  }
+  // Deletes a book from a shelf.
+  rpc DeleteBook(DeleteBookRequest) returns (DeleteBookResponse) {
+    option (mcpgw.v1.method) = {
+      title: "Delete Book"
+      description: "Delete a book in the bookstore"
+      destructive_hint: true
+    };
+  }
+
+  rpc UpdateBook(UpdateBookRequest) returns (UpdateBookResponse) {
+    option (mcpgw.v1.method) = {
+      title: "Update Book"
+      description: "Update a book in the bookstore"
+      destructive_hint: true
+      idempotent_hint: true
+      open_world_hint: true
+    };
+  }
+}
+
+message CreateGenreRequest {
+  string name = 1 [
+    (mcpgw.v1.field) = {description: "The name of the genre"},
+    (buf.validate.field).string.min_len = 1,
+    (buf.validate.field).string.max_len = 50
+  ];
+}
+
+message CreateGenreResponse {
+  Genre genre = 1;
+}
+
+message GetGenreRequest {
+  string genre_id = 1;
+}
+
+message GetGenreResponse {
+  Genre genre = 1;
+}
+
+message DeleteGenreRequest {
+  string genre_id = 1;
+}
+
+message DeleteGenreResponse {}
+
+message ListGenresRequest {}
+
+message ListGenresResponse {
+  repeated Genre genres = 1;
+}
+
+message DeleteShelfResponse {}
+
+message ListShelvesRequest {}
+
+message DeleteBookResponse {}
+
+message CreateShelfResponse {
+  Shelf shelf = 1;
+}
+
+message CreateBookResponse {
+  Book book = 1;
+}
+
+message GetBookResponse {
+  Book book = 1;
+}
+
+message UpdateBookResponse {
+  Book book = 1;
+}
+
+message GetAuthorResponse {
+  Author author = 1;
+
+  oneof genre {
+    bool fiction = 2;
+    bool nonfiction = 3;
+  }
+}
+
+// A shelf resource.
+message Shelf {
+  // A unique shelf id.
+  string id = 1;
+  // A theme of the shelf (fiction, poetry, etc).
+  string theme = 2;
+
+  // To test json name is percentage decoded
+  string search_decoded = 3 [json_name = "search[decoded]"];
+
+  // To test json name is percentage encoded
+  string search_encoded = 4 [json_name = "search%5Bencoded%5D"];
+}
+
+// A book genre
+message Genre {
+  // A unique genre id.
+  int64 id = 1;
+  // A genre name.
+  string name = 2;
+}
+
+// A book resource.
+message Book {
+  // A unique book id.
+  string id = 1;
+  // An author of the book.
+  string author = 2;
+  // A book title.
+  string title = 3;
+  // Quotes from the book.
+  repeated string quotes = 4;
+  string shelf_id = 5;
+}
+
+// An author resource.
+message Author {
+  // A unique author id.
+  int64 id = 1;
+  enum Gender {
+    GENDER_UNSPECIFIED = 0;
+    GENDER_MALE = 1;
+    GENDER_FEMALE = 2;
+  }
+  Gender gender = 2;
+  string first_name = 3;
+  string last_name = 4 [json_name = "lname"];
+  string metadata = 5;
+  google.protobuf.Timestamp created_at = 6;
+  repeated google.protobuf.Any books = 7;
+}
+
+// Response to ListShelves call.
+message ListShelvesResponse {
+  // Shelves in the bookstore.
+  repeated Shelf shelves = 1;
+  google.protobuf.FieldMask mask = 2;
+}
+
+// Request message for CreateShelf method.
+message CreateShelfRequest {
+  // The shelf resource to create.
+  Shelf shelf = 1;
+}
+
+// Request message for GetShelf method.
+message GetShelfRequest {
+  // The ID of the shelf resource to retrieve.
+  string shelf = 1;
+}
+
+// Request message for DeleteShelf method.
+message DeleteShelfRequest {
+  // The ID of the shelf to delete.
+  string shelf = 1;
+}
+
+// Request message for ListBooks method.
+message ListBooksRequest {
+  // ID of the shelf which books to list.
+  string shelf = 1;
+}
+
+// Request message for CreateBook method.
+message CreateBookRequest {
+  // The ID of the shelf on which to create a book.
+  string shelf = 1;
+  // A book resource to create on the shelf.
+  Book book = 2;
+}
+
+// Request message for GetBook method.
+message GetBookRequest {
+  // The ID of the shelf from which to retrieve a book.
+  string shelf = 1;
+  // The ID of the book to retrieve.
+  int64 book = 2;
+  bool include_author = 3;
+  int32 page_size = 4;
+  string page_token = 5;
+}
+
+// Request message for UpdateBook method
+message UpdateBookRequest {
+  // The ID of the shelf from which to retrieve a book.
+  string shelf = 1;
+  // A book resource to update on the shelf.
+  Book book = 2;
+}
+
+// Request message for DeleteBook method.
+message DeleteBookRequest {
+  // The book resource to delete.
+  Book book = 1;
+}
+
+// Request message for GetAuthor method.
+message GetAuthorRequest {
+  // The ID of the author resource to retrieve.
+  int64 author = 1;
+}
+
+// A recursive comment for the recursive request
+message RecursiveBookRequest {
+  // A book ID!
+  string book_id = 1;
+}
+
+// A recursive comment for the recursive response
+message RecursiveBookResponse {
+  // This is a recursive page
+  RecursivePage page = 1;
+  // This is a non recursive secondary prop
+  string another_prop = 2;
+}
+
+// A recursive page for the recursive response
+message RecursivePage {
+  // This is a recursive book
+  RecursiveBookResponse books = 1;
+  // This is a list of recursive books
+  repeated RecursiveBookResponse pages = 2;
+  // This is a list of recursive pages
+  repeated RecursivePage extra_pages = 3;
+  // This is a non recursive prop
+  string prop = 4;
+}
+
+message ListBooksResponse {
+  repeated Book books = 1;
+}

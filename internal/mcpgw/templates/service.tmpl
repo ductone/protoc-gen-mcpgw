@@ -1,0 +1,67 @@
+
+func RegisterMCP{{- .ServerName -}}(s mcpgw_v1.ServiceRegistrar, srv {{ .ServerName -}}) {
+	s.RegisterService(&mcpgw_desc_{{- .ServerName -}}, srv)
+}
+
+var mcpgw_desc_{{- .ServerName -}} = mcpgw_v1.ServiceDesc{
+	Name: "{{ .FullyQualifiedName -}}",
+	HandlerType: (*{{- .ServerName -}})(nil),
+	Methods: []*mcpgw_v1.MethodDesc{
+		{{- range .Methods }}
+		{
+			Method: "{{- .Method -}}",
+			Handler: {{ .MethodHandlerName -}},
+			Decoder: {{ .DecoderHandlerName -}},
+            InputSchema: {{ .InputSchemaHandlerName -}},
+            Title: "{{ .Title -}}",
+            Description: "{{ .Description -}}",
+            ReadOnlyHint: {{ .ReadOnlyHint -}},
+            Destructive: {{ .Destructive -}},
+            Idempotent: {{ .Idempotent -}},
+            OpenWorldHint: {{ .OpenWorldHint -}},
+		},
+		{{- end }}
+	},
+}
+
+{{ range .Methods }}
+
+func {{ .InputSchemaHandlerName -}}() map[string]any {
+    return mcpgw_schema.MustGenerateSchema(((*{{- .RequestType -}})(nil)).ProtoReflect().Descriptor())
+//	return mcpgw_schema.MustGenerateSchema((&{{- .RequestType -}}{}).ProtoReflect().Descriptor())
+}
+
+func {{ .MethodHandlerName -}}(srv any, ctx context.Context, dec func(proto.Message) error, interceptor grpc.UnaryServerInterceptor) (proto.Message, error) {
+	in := new({{- .RequestType -}})
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.({{- .ServerName -}}).{{- .MethodName -}}(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: {{ .FullMethodName -}},
+	}
+	handler := func(ctx context.Context, req any) (any, error) {
+		return srv.({{- .ServerName -}}).{{- .MethodName -}}(ctx, req.(*{{- .RequestType -}}))
+	}
+
+	rv, err := interceptor(ctx, in, info, handler)
+	if err != nil {
+		return nil, err
+	}
+	return rv.(proto.Message), nil
+}
+
+func {{ .DecoderHandlerName -}}(ctx context.Context, input mcpgw_v1.DecoderInput, out proto.Message) error {
+	var err error
+	_ = err
+
+    if len(input.RawArguments()) > 0 {
+        return protojson.Unmarshal(input.RawArguments(), out)
+    }
+
+    return mcpgw_v1.UnmarshalFromMap(input.Arguments(), out)
+}
+{{ end }}
