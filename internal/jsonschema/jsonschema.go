@@ -519,7 +519,7 @@ func applyValidationRules(fd protoreflect.FieldDescriptor, schema map[string]any
 	}
 
 	// Extract our field options
-	fieldOpts, ok := proto.GetExtension(opts, validate.E_Field).(*validate.FieldConstraints)
+	fieldOpts, ok := proto.GetExtension(opts, validate.E_Field).(*validate.FieldRules)
 	if !ok || fieldOpts == nil {
 		return
 	}
@@ -566,7 +566,7 @@ func applyValidationRules(fd protoreflect.FieldDescriptor, schema map[string]any
 }
 
 // applyStringValidationRules applies string validation rules to a schema
-func applyStringValidationRules(fieldOpts *validate.FieldConstraints, schema map[string]any) {
+func applyStringValidationRules(fieldOpts *validate.FieldRules, schema map[string]any) {
 	stringRules := fieldOpts.GetString()
 	if stringRules == nil {
 		return
@@ -634,7 +634,7 @@ func applyStringValidationRules(fieldOpts *validate.FieldConstraints, schema map
 }
 
 // applyInt32ValidationRules applies int32 validation rules to a schema
-func applyInt32ValidationRules(fieldOpts *validate.FieldConstraints, schema map[string]any) {
+func applyInt32ValidationRules(fieldOpts *validate.FieldRules, schema map[string]any) {
 	intRules := fieldOpts.GetInt32()
 	if intRules == nil {
 		return
@@ -672,7 +672,7 @@ func applyInt32ValidationRules(fieldOpts *validate.FieldConstraints, schema map[
 }
 
 // applyInt64ValidationRules applies int64 validation rules to a schema
-func applyInt64ValidationRules(fieldOpts *validate.FieldConstraints, schema map[string]any) {
+func applyInt64ValidationRules(fieldOpts *validate.FieldRules, schema map[string]any) {
 	intRules := fieldOpts.GetInt64()
 	if intRules == nil {
 		return
@@ -710,7 +710,7 @@ func applyInt64ValidationRules(fieldOpts *validate.FieldConstraints, schema map[
 }
 
 // applyUint32ValidationRules applies uint32 validation rules to a schema
-func applyUint32ValidationRules(fieldOpts *validate.FieldConstraints, schema map[string]any) {
+func applyUint32ValidationRules(fieldOpts *validate.FieldRules, schema map[string]any) {
 	uintRules := fieldOpts.GetUint32()
 	if uintRules == nil {
 		return
@@ -748,7 +748,7 @@ func applyUint32ValidationRules(fieldOpts *validate.FieldConstraints, schema map
 }
 
 // applyUint64ValidationRules applies uint64 validation rules to a schema
-func applyUint64ValidationRules(fieldOpts *validate.FieldConstraints, schema map[string]any) {
+func applyUint64ValidationRules(fieldOpts *validate.FieldRules, schema map[string]any) {
 	uintRules := fieldOpts.GetUint64()
 	if uintRules == nil {
 		return
@@ -786,7 +786,7 @@ func applyUint64ValidationRules(fieldOpts *validate.FieldConstraints, schema map
 }
 
 // applyFloatValidationRules applies float validation rules to a schema
-func applyFloatValidationRules(fieldOpts *validate.FieldConstraints, schema map[string]any) {
+func applyFloatValidationRules(fieldOpts *validate.FieldRules, schema map[string]any) {
 	floatRules := fieldOpts.GetFloat()
 	if floatRules == nil {
 		return
@@ -824,7 +824,7 @@ func applyFloatValidationRules(fieldOpts *validate.FieldConstraints, schema map[
 }
 
 // applyDoubleValidationRules applies double validation rules to a schema
-func applyDoubleValidationRules(fieldOpts *validate.FieldConstraints, schema map[string]any) {
+func applyDoubleValidationRules(fieldOpts *validate.FieldRules, schema map[string]any) {
 	doubleRules := fieldOpts.GetDouble()
 	if doubleRules == nil {
 		return
@@ -862,7 +862,7 @@ func applyDoubleValidationRules(fieldOpts *validate.FieldConstraints, schema map
 }
 
 // applyBytesValidationRules applies bytes validation rules to a schema
-func applyBytesValidationRules(fieldOpts *validate.FieldConstraints, schema map[string]any) {
+func applyBytesValidationRules(fieldOpts *validate.FieldRules, schema map[string]any) {
 	bytesRules := fieldOpts.GetBytes()
 	if bytesRules == nil {
 		return
@@ -890,7 +890,7 @@ func applyBytesValidationRules(fieldOpts *validate.FieldConstraints, schema map[
 }
 
 // applyBoolValidationRules applies bool validation rules to a schema
-func applyBoolValidationRules(fieldOpts *validate.FieldConstraints, schema map[string]any) {
+func applyBoolValidationRules(fieldOpts *validate.FieldRules, schema map[string]any) {
 	boolRules := fieldOpts.GetBool()
 	if boolRules == nil {
 		return
@@ -903,7 +903,7 @@ func applyBoolValidationRules(fieldOpts *validate.FieldConstraints, schema map[s
 }
 
 // applyEnumValidationRules applies enum validation rules to a schema
-func applyEnumValidationRules(fieldOpts *validate.FieldConstraints, schema map[string]any) {
+func applyEnumValidationRules(fieldOpts *validate.FieldRules, schema map[string]any) {
 	enumRules := fieldOpts.GetEnum()
 	if enumRules == nil {
 		return
@@ -931,7 +931,7 @@ func applyEnumValidationRules(fieldOpts *validate.FieldConstraints, schema map[s
 }
 
 // applyRepeatedValidationRules applies validation rules for repeated fields
-func applyRepeatedValidationRules(fieldOpts *validate.FieldConstraints, schema map[string]any) {
+func applyRepeatedValidationRules(fieldOpts *validate.FieldRules, schema map[string]any) {
 	repeatedRules := fieldOpts.GetRepeated()
 	if repeatedRules == nil {
 		return
@@ -954,7 +954,7 @@ func applyRepeatedValidationRules(fieldOpts *validate.FieldConstraints, schema m
 }
 
 // applyMapValidationRules applies validation rules for map fields
-func applyMapValidationRules(fieldOpts *validate.FieldConstraints, schema map[string]any) {
+func applyMapValidationRules(fieldOpts *validate.FieldRules, schema map[string]any) {
 	mapRules := fieldOpts.GetMap()
 	if mapRules == nil {
 		return
