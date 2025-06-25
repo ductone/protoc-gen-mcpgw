@@ -30,6 +30,7 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			Destructive:   false,
 			Idempotent:    true,
 			OpenWorldHint: false,
+			ToolName:      "list_shelves",
 		},
 		{
 			Method:        "bookstore.v1.BookstoreService.CreateShelf",
@@ -42,6 +43,7 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			Destructive:   false,
 			Idempotent:    false,
 			OpenWorldHint: false,
+			ToolName:      "create_shelf",
 		},
 		{
 			Method:        "bookstore.v1.BookstoreService.DeleteShelf",
@@ -54,6 +56,7 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			Destructive:   true,
 			Idempotent:    false,
 			OpenWorldHint: false,
+			ToolName:      "delete_shelf",
 		},
 		{
 			Method:        "bookstore.v1.BookstoreService.ListGenres",
@@ -66,6 +69,7 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			Destructive:   false,
 			Idempotent:    false,
 			OpenWorldHint: false,
+			ToolName:      "list_genres",
 		},
 		{
 			Method:        "bookstore.v1.BookstoreService.CreateGenre",
@@ -78,6 +82,7 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			Destructive:   false,
 			Idempotent:    false,
 			OpenWorldHint: false,
+			ToolName:      "create_genre",
 		},
 		{
 			Method:        "bookstore.v1.BookstoreService.GetGenre",
@@ -90,6 +95,7 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			Destructive:   false,
 			Idempotent:    false,
 			OpenWorldHint: false,
+			ToolName:      "get_genre",
 		},
 		{
 			Method:        "bookstore.v1.BookstoreService.DeleteGenre",
@@ -102,6 +108,7 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			Destructive:   true,
 			Idempotent:    false,
 			OpenWorldHint: false,
+			ToolName:      "delete_genre",
 		},
 		{
 			Method:        "bookstore.v1.BookstoreService.CreateBook",
@@ -114,6 +121,7 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			Destructive:   true,
 			Idempotent:    true,
 			OpenWorldHint: true,
+			ToolName:      "create_book",
 		},
 		{
 			Method:        "bookstore.v1.BookstoreService.GetBook",
@@ -126,6 +134,7 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			Destructive:   false,
 			Idempotent:    true,
 			OpenWorldHint: true,
+			ToolName:      "get_book",
 		},
 		{
 			Method:        "bookstore.v1.BookstoreService.ListBooks",
@@ -138,6 +147,7 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			Destructive:   false,
 			Idempotent:    true,
 			OpenWorldHint: true,
+			ToolName:      "list_books",
 		},
 		{
 			Method:        "bookstore.v1.BookstoreService.DeleteBook",
@@ -150,6 +160,7 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			Destructive:   true,
 			Idempotent:    false,
 			OpenWorldHint: false,
+			ToolName:      "delete_book",
 		},
 		{
 			Method:        "bookstore.v1.BookstoreService.UpdateBook",
@@ -162,6 +173,7 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			Destructive:   true,
 			Idempotent:    true,
 			OpenWorldHint: true,
+			ToolName:      "bookstore_v1_bookstoreservice_updatebook",
 		},
 	},
 }

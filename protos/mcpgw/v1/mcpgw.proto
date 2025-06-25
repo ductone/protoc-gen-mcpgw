@@ -39,6 +39,7 @@ message MethodOptions {
   bool destructive_hint = 4;
   bool idempotent_hint = 5;
   bool open_world_hint = 6;
+  string tool_name = 7;
 }
 
 message ServiceOptions {

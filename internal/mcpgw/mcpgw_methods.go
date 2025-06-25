@@ -39,15 +39,22 @@ func (module *Module) methodContext(ctx pgsgo.Context, w io.Writer, f pgs.File, 
 	ix.Protojson = true
 	ix.GRPC = true
 
+	methodName := strings.TrimPrefix(method.FullyQualifiedName(), ".")
+	toolName := mext.GetToolName()
+	if toolName == "" {
+		toolName = strings.ToLower(strings.ReplaceAll(methodName, ".", "_"))
+	}
+
 	rv := &methodTemplateContext{
 		MethodDesc: mcpgw_v1.MethodDesc{
-			Method:        strings.TrimPrefix(method.FullyQualifiedName(), "."),
+			Method:        methodName,
 			Title:         mext.GetTitle(),
 			Description:   mext.GetDescription(),
 			ReadOnlyHint:  mext.GetReadOnlyHint(),
 			Destructive:   mext.GetDestructiveHint(),
 			Idempotent:    mext.GetIdempotentHint(),
 			OpenWorldHint: mext.GetOpenWorldHint(),
+			ToolName:      toolName,
 		},
 		ServerName: ctx.ServerName(service).String(),
 		MethodName: ctx.Name(method).String(),

@@ -21,6 +21,7 @@ service BookstoreService {
   rpc ListShelves(ListShelvesRequest) returns (ListShelvesResponse) {
     option (mcpgw.v1.method) = {
       title: "List Shelves"
+      tool_name: "list_shelves"
       description: "List all shelves in the bookstore"
       read_only_hint: true
       idempotent_hint: true
@@ -30,6 +31,7 @@ service BookstoreService {
   rpc CreateShelf(CreateShelfRequest) returns (CreateShelfResponse) {
     option (mcpgw.v1.method) = {
       title: "Create Shelf"
+      tool_name: "create_shelf"
       description: "Create a new shelf in the bookstore"
     };
   }
@@ -38,6 +40,7 @@ service BookstoreService {
   rpc DeleteShelf(DeleteShelfRequest) returns (DeleteShelfResponse) {
     option (mcpgw.v1.method) = {
       title: "Delete Shelf"
+      tool_name: "delete_shelf"
       description: "Delete a shelf in the bookstore"
       destructive_hint: true
     };
@@ -47,6 +50,7 @@ service BookstoreService {
   rpc ListGenres(ListGenresRequest) returns (ListGenresResponse) {
     option (mcpgw.v1.method) = {
       title: "List Genres"
+      tool_name: "list_genres"
       description: "List all genres in the bookstore"
       read_only_hint: true
     };
@@ -56,6 +60,7 @@ service BookstoreService {
   rpc CreateGenre(CreateGenreRequest) returns (CreateGenreResponse) {
     option (mcpgw.v1.method) = {
       title: "Create Genre"
+      tool_name: "create_genre"
       description: "Create a new genre in the bookstore"
     };
   }
@@ -64,6 +69,7 @@ service BookstoreService {
   rpc GetGenre(GetGenreRequest) returns (GetGenreResponse) {
     option (mcpgw.v1.method) = {
       title: "Get Genre"
+      tool_name: "get_genre"
       description: "Get a genre in the bookstore"
     };
   }
@@ -72,6 +78,7 @@ service BookstoreService {
   rpc DeleteGenre(DeleteGenreRequest) returns (DeleteGenreResponse) {
     option (mcpgw.v1.method) = {
       title: "Delete Genre"
+      tool_name: "delete_genre"
       description: "Delete a genre in the bookstore"
       destructive_hint: true
     };
@@ -81,6 +88,7 @@ service BookstoreService {
   rpc CreateBook(CreateBookRequest) returns (CreateBookResponse) {
     option (mcpgw.v1.method) = {
       title: "Create Book"
+      tool_name: "create_book"
       description: "Create a new book in the bookstore"
       destructive_hint: true
       idempotent_hint: true
@@ -92,6 +100,7 @@ service BookstoreService {
   rpc GetBook(GetBookRequest) returns (GetBookResponse) {
     option (mcpgw.v1.method) = {
       title: "Get Book"
+      tool_name: "get_book"
       description: "Get a book in the bookstore"
       read_only_hint: true
       idempotent_hint: true
@@ -101,6 +110,7 @@ service BookstoreService {
   rpc ListBooks(ListBooksRequest) returns (ListBooksResponse) {
     option (mcpgw.v1.method) = {
       title: "List Books"
+      tool_name: "list_books"
       description: "List all books in the bookstore"
       read_only_hint: true
       idempotent_hint: true
@@ -111,6 +121,7 @@ service BookstoreService {
   rpc DeleteBook(DeleteBookRequest) returns (DeleteBookResponse) {
     option (mcpgw.v1.method) = {
       title: "Delete Book"
+      tool_name: "delete_book"
       description: "Delete a book in the bookstore"
       destructive_hint: true
     };

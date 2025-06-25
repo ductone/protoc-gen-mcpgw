@@ -3362,34 +3362,35 @@ const file_bookstore_v1_bookstore_proto_rawDesc = "" +
 	"extraPages\x12\x12\n" +
 	"\x04prop\x18\x04 \x01(\tR\x04prop\"=\n" +
 	"\x11ListBooksResponse\x12(\n" +
-	"\x05books\x18\x01 \x03(\v2\x12.bookstore.v1.BookR\x05books2\x85\r\n" +
-	"\x10BookstoreService\x12\x8d\x01\n" +
-	"\vListShelves\x12 .bookstore.v1.ListShelvesRequest\x1a!.bookstore.v1.ListShelvesResponse\"9ڜ\x045\n" +
-	"\fList Shelves\x12!List all shelves in the bookstore\x18\x01(\x01\x12\x8b\x01\n" +
-	"\vCreateShelf\x12 .bookstore.v1.CreateShelfRequest\x1a!.bookstore.v1.CreateShelfResponse\"7ڜ\x043\n" +
-	"\fCreate Shelf\x12#Create a new shelf in the bookstore\x12\x89\x01\n" +
-	"\vDeleteShelf\x12 .bookstore.v1.DeleteShelfRequest\x1a!.bookstore.v1.DeleteShelfResponse\"5ڜ\x041\n" +
-	"\fDelete Shelf\x12\x1fDelete a shelf in the bookstore \x01\x12\x86\x01\n" +
+	"\x05books\x18\x01 \x03(\v2\x12.bookstore.v1.BookR\x05books2\x95\x0e\n" +
+	"\x10BookstoreService\x12\x9b\x01\n" +
+	"\vListShelves\x12 .bookstore.v1.ListShelvesRequest\x1a!.bookstore.v1.ListShelvesResponse\"Gڜ\x04C\n" +
+	"\fList Shelves\x12!List all shelves in the bookstore\x18\x01(\x01:\flist_shelves\x12\x99\x01\n" +
+	"\vCreateShelf\x12 .bookstore.v1.CreateShelfRequest\x1a!.bookstore.v1.CreateShelfResponse\"Eڜ\x04A\n" +
+	"\fCreate Shelf\x12#Create a new shelf in the bookstore:\fcreate_shelf\x12\x97\x01\n" +
+	"\vDeleteShelf\x12 .bookstore.v1.DeleteShelfRequest\x1a!.bookstore.v1.DeleteShelfResponse\"Cڜ\x04?\n" +
+	"\fDelete Shelf\x12\x1fDelete a shelf in the bookstore \x01:\fdelete_shelf\x12\x93\x01\n" +
 	"\n" +
-	"ListGenres\x12\x1f.bookstore.v1.ListGenresRequest\x1a .bookstore.v1.ListGenresResponse\"5ڜ\x041\n" +
-	"\vList Genres\x12 List all genres in the bookstore\x18\x01\x12\x8b\x01\n" +
-	"\vCreateGenre\x12 .bookstore.v1.CreateGenreRequest\x1a!.bookstore.v1.CreateGenreResponse\"7ڜ\x043\n" +
-	"\fCreate Genre\x12#Create a new genre in the bookstore\x12x\n" +
-	"\bGetGenre\x12\x1d.bookstore.v1.GetGenreRequest\x1a\x1e.bookstore.v1.GetGenreResponse\"-ڜ\x04)\n" +
-	"\tGet Genre\x12\x1cGet a genre in the bookstore\x12\x89\x01\n" +
-	"\vDeleteGenre\x12 .bookstore.v1.DeleteGenreRequest\x1a!.bookstore.v1.DeleteGenreResponse\"5ڜ\x041\n" +
-	"\fDelete Genre\x12\x1fDelete a genre in the bookstore \x01\x12\x8c\x01\n" +
+	"ListGenres\x12\x1f.bookstore.v1.ListGenresRequest\x1a .bookstore.v1.ListGenresResponse\"Bڜ\x04>\n" +
+	"\vList Genres\x12 List all genres in the bookstore\x18\x01:\vlist_genres\x12\x99\x01\n" +
+	"\vCreateGenre\x12 .bookstore.v1.CreateGenreRequest\x1a!.bookstore.v1.CreateGenreResponse\"Eڜ\x04A\n" +
+	"\fCreate Genre\x12#Create a new genre in the bookstore:\fcreate_genre\x12\x83\x01\n" +
+	"\bGetGenre\x12\x1d.bookstore.v1.GetGenreRequest\x1a\x1e.bookstore.v1.GetGenreResponse\"8ڜ\x044\n" +
+	"\tGet Genre\x12\x1cGet a genre in the bookstore:\tget_genre\x12\x97\x01\n" +
+	"\vDeleteGenre\x12 .bookstore.v1.DeleteGenreRequest\x1a!.bookstore.v1.DeleteGenreResponse\"Cڜ\x04?\n" +
+	"\fDelete Genre\x12\x1fDelete a genre in the bookstore \x01:\fdelete_genre\x12\x99\x01\n" +
 	"\n" +
-	"CreateBook\x12\x1f.bookstore.v1.CreateBookRequest\x1a .bookstore.v1.CreateBookResponse\";ڜ\x047\n" +
-	"\vCreate Book\x12\"Create a new book in the bookstore \x01(\x010\x01\x12y\n" +
-	"\aGetBook\x12\x1c.bookstore.v1.GetBookRequest\x1a\x1d.bookstore.v1.GetBookResponse\"1ڜ\x04-\n" +
-	"\bGet Book\x12\x1bGet a book in the bookstore\x18\x01(\x010\x01\x12\x85\x01\n" +
-	"\tListBooks\x12\x1e.bookstore.v1.ListBooksRequest\x1a\x1f.bookstore.v1.ListBooksResponse\"7ڜ\x043\n" +
+	"CreateBook\x12\x1f.bookstore.v1.CreateBookRequest\x1a .bookstore.v1.CreateBookResponse\"Hڜ\x04D\n" +
+	"\vCreate Book\x12\"Create a new book in the bookstore \x01(\x010\x01:\vcreate_book\x12\x83\x01\n" +
+	"\aGetBook\x12\x1c.bookstore.v1.GetBookRequest\x1a\x1d.bookstore.v1.GetBookResponse\";ڜ\x047\n" +
+	"\bGet Book\x12\x1bGet a book in the bookstore\x18\x01(\x010\x01:\bget_book\x12\x91\x01\n" +
+	"\tListBooks\x12\x1e.bookstore.v1.ListBooksRequest\x1a\x1f.bookstore.v1.ListBooksResponse\"Cڜ\x04?\n" +
 	"\n" +
-	"List Books\x12\x1fList all books in the bookstore\x18\x01(\x010\x01\x12\x84\x01\n" +
+	"List Books\x12\x1fList all books in the bookstore\x18\x01(\x010\x01:\n" +
+	"list_books\x12\x91\x01\n" +
 	"\n" +
-	"DeleteBook\x12\x1f.bookstore.v1.DeleteBookRequest\x1a .bookstore.v1.DeleteBookResponse\"3ڜ\x04/\n" +
-	"\vDelete Book\x12\x1eDelete a book in the bookstore \x01\x12\x88\x01\n" +
+	"DeleteBook\x12\x1f.bookstore.v1.DeleteBookRequest\x1a .bookstore.v1.DeleteBookResponse\"@ڜ\x04<\n" +
+	"\vDelete Book\x12\x1eDelete a book in the bookstore \x01:\vdelete_book\x12\x88\x01\n" +
 	"\n" +
 	"UpdateBook\x12\x1f.bookstore.v1.UpdateBookRequest\x1a .bookstore.v1.UpdateBookResponse\"7ڜ\x043\n" +
 	"\vUpdate Book\x12\x1eUpdate a book in the bookstore \x01(\x010\x01\x1a\x06Ҝ\x04\x02\b\x01B\xb5\x01\n" +

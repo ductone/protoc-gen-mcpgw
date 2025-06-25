@@ -151,6 +151,7 @@ type MethodOptions struct {
 	xxx_hidden_DestructiveHint bool                   `protobuf:"varint,4,opt,name=destructive_hint,json=destructiveHint"`
 	xxx_hidden_IdempotentHint  bool                   `protobuf:"varint,5,opt,name=idempotent_hint,json=idempotentHint"`
 	xxx_hidden_OpenWorldHint   bool                   `protobuf:"varint,6,opt,name=open_world_hint,json=openWorldHint"`
+	xxx_hidden_ToolName        *string                `protobuf:"bytes,7,opt,name=tool_name,json=toolName"`
 	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
 	XXX_presence               [1]uint32
 	unknownFields              protoimpl.UnknownFields
@@ -230,34 +231,49 @@ func (x *MethodOptions) GetOpenWorldHint() bool {
 	return false
 }
 
+func (x *MethodOptions) GetToolName() string {
+	if x != nil {
+		if x.xxx_hidden_ToolName != nil {
+			return *x.xxx_hidden_ToolName
+		}
+		return ""
+	}
+	return ""
+}
+
 func (x *MethodOptions) SetTitle(v string) {
 	x.xxx_hidden_Title = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
 }
 
 func (x *MethodOptions) SetDescription(v string) {
 	x.xxx_hidden_Description = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
 }
 
 func (x *MethodOptions) SetReadOnlyHint(v bool) {
 	x.xxx_hidden_ReadOnlyHint = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
 }
 
 func (x *MethodOptions) SetDestructiveHint(v bool) {
 	x.xxx_hidden_DestructiveHint = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
 }
 
 func (x *MethodOptions) SetIdempotentHint(v bool) {
 	x.xxx_hidden_IdempotentHint = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 7)
 }
 
 func (x *MethodOptions) SetOpenWorldHint(v bool) {
 	x.xxx_hidden_OpenWorldHint = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 7)
+}
+
+func (x *MethodOptions) SetToolName(v string) {
+	x.xxx_hidden_ToolName = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 7)
 }
 
 func (x *MethodOptions) HasTitle() bool {
@@ -302,6 +318,13 @@ func (x *MethodOptions) HasOpenWorldHint() bool {
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
+func (x *MethodOptions) HasToolName() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
+}
+
 func (x *MethodOptions) ClearTitle() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
 	x.xxx_hidden_Title = nil
@@ -332,6 +355,11 @@ func (x *MethodOptions) ClearOpenWorldHint() {
 	x.xxx_hidden_OpenWorldHint = false
 }
 
+func (x *MethodOptions) ClearToolName() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_ToolName = nil
+}
+
 type MethodOptions_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -341,6 +369,7 @@ type MethodOptions_builder struct {
 	DestructiveHint *bool
 	IdempotentHint  *bool
 	OpenWorldHint   *bool
+	ToolName        *string
 }
 
 func (b0 MethodOptions_builder) Build() *MethodOptions {
@@ -348,28 +377,32 @@ func (b0 MethodOptions_builder) Build() *MethodOptions {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Title != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
 		x.xxx_hidden_Title = b.Title
 	}
 	if b.Description != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
 		x.xxx_hidden_Description = b.Description
 	}
 	if b.ReadOnlyHint != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
 		x.xxx_hidden_ReadOnlyHint = *b.ReadOnlyHint
 	}
 	if b.DestructiveHint != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
 		x.xxx_hidden_DestructiveHint = *b.DestructiveHint
 	}
 	if b.IdempotentHint != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
 		x.xxx_hidden_IdempotentHint = *b.IdempotentHint
 	}
 	if b.OpenWorldHint != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
 		x.xxx_hidden_OpenWorldHint = *b.OpenWorldHint
+	}
+	if b.ToolName != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
+		x.xxx_hidden_ToolName = b.ToolName
 	}
 	return m0
 }
@@ -515,14 +548,15 @@ const file_mcpgw_v1_mcpgw_proto_rawDesc = "" +
 	"\x14mcpgw/v1/mcpgw.proto\x12\bmcpgw.v1\x1a google/protobuf/descriptor.proto\x1a!google/protobuf/go_features.proto\"\x10\n" +
 	"\x0eMessageOptions\"0\n" +
 	"\fFieldOptions\x12 \n" +
-	"\vdescription\x18\x01 \x01(\tR\vdescription\"\xe9\x01\n" +
+	"\vdescription\x18\x01 \x01(\tR\vdescription\"\x86\x02\n" +
 	"\rMethodOptions\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12$\n" +
 	"\x0eread_only_hint\x18\x03 \x01(\bR\freadOnlyHint\x12)\n" +
 	"\x10destructive_hint\x18\x04 \x01(\bR\x0fdestructiveHint\x12'\n" +
 	"\x0fidempotent_hint\x18\x05 \x01(\bR\x0eidempotentHint\x12&\n" +
-	"\x0fopen_world_hint\x18\x06 \x01(\bR\ropenWorldHint\"*\n" +
+	"\x0fopen_world_hint\x18\x06 \x01(\bR\ropenWorldHint\x12\x1b\n" +
+	"\ttool_name\x18\a \x01(\tR\btoolName\"*\n" +
 	"\x0eServiceOptions\x12\x18\n" +
 	"\aenabled\x18\x01 \x01(\bR\aenabled:T\n" +
 	"\aservice\x12\x1f.google.protobuf.ServiceOptions\x18\xcaC \x01(\v2\x18.mcpgw.v1.ServiceOptionsR\aservice:P\n" +

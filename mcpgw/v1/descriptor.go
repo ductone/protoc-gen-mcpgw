@@ -15,7 +15,7 @@ type ServiceDesc struct {
 
 type methodHandler func(srv interface{}, ctx context.Context, dec func(proto.Message) error, interceptor grpc.UnaryServerInterceptor) (proto.Message, error)
 type decoderHandler func(ctx context.Context, input DecoderInput, out proto.Message) error
-type inputSchemaHandler func() (map[string]any)
+type inputSchemaHandler func() map[string]any
 
 type MethodDesc struct {
 	Method        string
@@ -28,6 +28,7 @@ type MethodDesc struct {
 	Destructive   bool
 	Idempotent    bool
 	OpenWorldHint bool
+	ToolName      string
 }
 
 type ServiceRegistrar interface {
