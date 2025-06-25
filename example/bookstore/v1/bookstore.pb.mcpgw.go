@@ -20,7 +20,7 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 	HandlerType: (*BookstoreServiceServer)(nil),
 	Methods: []*mcpgw_v1.MethodDesc{
 		{
-			Method:        "bookstore.v1.BookstoreService.ListShelves",
+			Method:        BookstoreService_ListShelves_FullMethodName,
 			Handler:       _BookstoreService_ListShelves_MCPGW_Handler,
 			Decoder:       _BookstoreService_ListShelves_MCPGW_Decoder,
 			InputSchema:   _BookstoreService_ListShelves_MCPGW_InputSchema,
@@ -32,7 +32,7 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			OpenWorldHint: false,
 		},
 		{
-			Method:        "bookstore.v1.BookstoreService.CreateShelf",
+			Method:        BookstoreService_CreateShelf_FullMethodName,
 			Handler:       _BookstoreService_CreateShelf_MCPGW_Handler,
 			Decoder:       _BookstoreService_CreateShelf_MCPGW_Decoder,
 			InputSchema:   _BookstoreService_CreateShelf_MCPGW_InputSchema,
@@ -44,7 +44,7 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			OpenWorldHint: false,
 		},
 		{
-			Method:        "bookstore.v1.BookstoreService.DeleteShelf",
+			Method:        BookstoreService_DeleteShelf_FullMethodName,
 			Handler:       _BookstoreService_DeleteShelf_MCPGW_Handler,
 			Decoder:       _BookstoreService_DeleteShelf_MCPGW_Decoder,
 			InputSchema:   _BookstoreService_DeleteShelf_MCPGW_InputSchema,
@@ -56,7 +56,7 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			OpenWorldHint: false,
 		},
 		{
-			Method:        "bookstore.v1.BookstoreService.ListGenres",
+			Method:        BookstoreService_ListGenres_FullMethodName,
 			Handler:       _BookstoreService_ListGenres_MCPGW_Handler,
 			Decoder:       _BookstoreService_ListGenres_MCPGW_Decoder,
 			InputSchema:   _BookstoreService_ListGenres_MCPGW_InputSchema,
@@ -68,7 +68,7 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			OpenWorldHint: false,
 		},
 		{
-			Method:        "bookstore.v1.BookstoreService.CreateGenre",
+			Method:        BookstoreService_CreateGenre_FullMethodName,
 			Handler:       _BookstoreService_CreateGenre_MCPGW_Handler,
 			Decoder:       _BookstoreService_CreateGenre_MCPGW_Decoder,
 			InputSchema:   _BookstoreService_CreateGenre_MCPGW_InputSchema,
@@ -80,7 +80,7 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			OpenWorldHint: false,
 		},
 		{
-			Method:        "bookstore.v1.BookstoreService.GetGenre",
+			Method:        BookstoreService_GetGenre_FullMethodName,
 			Handler:       _BookstoreService_GetGenre_MCPGW_Handler,
 			Decoder:       _BookstoreService_GetGenre_MCPGW_Decoder,
 			InputSchema:   _BookstoreService_GetGenre_MCPGW_InputSchema,
@@ -92,7 +92,7 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			OpenWorldHint: false,
 		},
 		{
-			Method:        "bookstore.v1.BookstoreService.DeleteGenre",
+			Method:        BookstoreService_DeleteGenre_FullMethodName,
 			Handler:       _BookstoreService_DeleteGenre_MCPGW_Handler,
 			Decoder:       _BookstoreService_DeleteGenre_MCPGW_Decoder,
 			InputSchema:   _BookstoreService_DeleteGenre_MCPGW_InputSchema,
@@ -104,7 +104,7 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			OpenWorldHint: false,
 		},
 		{
-			Method:        "bookstore.v1.BookstoreService.CreateBook",
+			Method:        BookstoreService_CreateBook_FullMethodName,
 			Handler:       _BookstoreService_CreateBook_MCPGW_Handler,
 			Decoder:       _BookstoreService_CreateBook_MCPGW_Decoder,
 			InputSchema:   _BookstoreService_CreateBook_MCPGW_InputSchema,
@@ -116,7 +116,7 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			OpenWorldHint: true,
 		},
 		{
-			Method:        "bookstore.v1.BookstoreService.GetBook",
+			Method:        BookstoreService_GetBook_FullMethodName,
 			Handler:       _BookstoreService_GetBook_MCPGW_Handler,
 			Decoder:       _BookstoreService_GetBook_MCPGW_Decoder,
 			InputSchema:   _BookstoreService_GetBook_MCPGW_InputSchema,
@@ -128,7 +128,7 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			OpenWorldHint: true,
 		},
 		{
-			Method:        "bookstore.v1.BookstoreService.ListBooks",
+			Method:        BookstoreService_ListBooks_FullMethodName,
 			Handler:       _BookstoreService_ListBooks_MCPGW_Handler,
 			Decoder:       _BookstoreService_ListBooks_MCPGW_Decoder,
 			InputSchema:   _BookstoreService_ListBooks_MCPGW_InputSchema,
@@ -140,7 +140,7 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			OpenWorldHint: true,
 		},
 		{
-			Method:        "bookstore.v1.BookstoreService.DeleteBook",
+			Method:        BookstoreService_DeleteBook_FullMethodName,
 			Handler:       _BookstoreService_DeleteBook_MCPGW_Handler,
 			Decoder:       _BookstoreService_DeleteBook_MCPGW_Decoder,
 			InputSchema:   _BookstoreService_DeleteBook_MCPGW_InputSchema,
@@ -152,7 +152,7 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			OpenWorldHint: false,
 		},
 		{
-			Method:        "bookstore.v1.BookstoreService.UpdateBook",
+			Method:        BookstoreService_UpdateBook_FullMethodName,
 			Handler:       _BookstoreService_UpdateBook_MCPGW_Handler,
 			Decoder:       _BookstoreService_UpdateBook_MCPGW_Decoder,
 			InputSchema:   _BookstoreService_UpdateBook_MCPGW_InputSchema,

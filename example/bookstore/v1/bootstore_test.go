@@ -84,7 +84,7 @@ func TestInputSchemaValidation(t *testing.T) {
 	// Test the CreateGenre method's input schema
 	t.Run("CreateGenre_Schema", func(t *testing.T) {
 		// Get the method descriptor
-		methodDesc := mockRegistrar.methodDescs["bookstore.v1.BookstoreService.CreateGenre"]
+		methodDesc := mockRegistrar.methodDescs["/bookstore.v1.BookstoreService/CreateGenre"]
 		require.NotNil(t, methodDesc, "Method descriptor for CreateGenre should be registered")
 
 		// Check if the InputSchema function is available
@@ -120,7 +120,7 @@ func TestInputSchemaValidation(t *testing.T) {
 	// Test the CreateBook method's input schema which is more complex
 	t.Run("CreateBook_Schema", func(t *testing.T) {
 		// Get the method descriptor
-		methodDesc := mockRegistrar.methodDescs["bookstore.v1.BookstoreService.CreateBook"]
+		methodDesc := mockRegistrar.methodDescs["/bookstore.v1.BookstoreService/CreateBook"]
 		require.NotNil(t, methodDesc, "Method descriptor for CreateBook should be registered")
 
 		// Check if the InputSchema function is available
@@ -262,7 +262,7 @@ func TestMCPGWRegistration(t *testing.T) {
 	// Test CreateGenre method
 	t.Run("CreateGenre", func(t *testing.T) {
 		// Get the method descriptor for CreateGenre
-		methodDesc := mockRegistrar.methodDescs["bookstore.v1.BookstoreService.CreateGenre"]
+		methodDesc := mockRegistrar.methodDescs["/bookstore.v1.BookstoreService/CreateGenre"]
 		assert.NotNil(t, methodDesc, "Method descriptor for CreateGenre should be registered")
 
 		// Create input with map[string]any
@@ -284,7 +284,7 @@ func TestMCPGWRegistration(t *testing.T) {
 	// Test CreateBook method with nested structure
 	t.Run("CreateBook", func(t *testing.T) {
 		// Get the method descriptor for CreateBook
-		methodDesc := mockRegistrar.methodDescs["bookstore.v1.BookstoreService.CreateBook"]
+		methodDesc := mockRegistrar.methodDescs["/bookstore.v1.BookstoreService/CreateBook"]
 		assert.NotNil(t, methodDesc, "Method descriptor for CreateBook should be registered")
 
 		// Create complex input with nested map[string]any
@@ -321,7 +321,7 @@ func TestMCPGWRegistration(t *testing.T) {
 	// Test full end-to-end flow for CreateGenre
 	t.Run("CreateGenre_E2E", func(t *testing.T) {
 		// Get the method descriptor
-		methodDesc := mockRegistrar.methodDescs["bookstore.v1.BookstoreService.CreateGenre"]
+		methodDesc := mockRegistrar.methodDescs["/bookstore.v1.BookstoreService/CreateGenre"]
 
 		// Create context
 		ctx := context.Background()
@@ -332,7 +332,7 @@ func TestMCPGWRegistration(t *testing.T) {
 		}
 
 		// Create decoder input
-		input := NewMockDecoderInput("bookstore.v1.BookstoreService.CreateGenre", inputMap)
+		input := NewMockDecoderInput("/bookstore.v1.BookstoreService/CreateGenre", inputMap)
 
 		// Create a request message
 		req := &v1.CreateGenreRequest{}
@@ -393,7 +393,7 @@ func TestProtoValidateMiddleware(t *testing.T) {
 	v1.RegisterMCPBookstoreServiceServer(mockRegistrar, server)
 
 	// Get the method descriptor for CreateGenre
-	methodDesc := mockRegistrar.methodDescs["bookstore.v1.BookstoreService.CreateGenre"]
+	methodDesc := mockRegistrar.methodDescs["/bookstore.v1.BookstoreService/CreateGenre"]
 	assert.NotNil(t, methodDesc, "Method descriptor for CreateGenre should be registered")
 
 	// Create a validating interceptor
@@ -456,7 +456,7 @@ func TestProtoValidateMiddleware(t *testing.T) {
 	// If CreateBookRequest requires a title, test that validation
 	t.Run("InvalidBook_MissingTitle", func(t *testing.T) {
 		// Get the method descriptor for CreateBook
-		bookMethodDesc := mockRegistrar.methodDescs["bookstore.v1.BookstoreService.CreateBook"]
+		bookMethodDesc := mockRegistrar.methodDescs["/bookstore.v1.BookstoreService/CreateBook"]
 		assert.NotNil(t, bookMethodDesc, "Method descriptor for CreateBook should be registered")
 
 		// Create a map with invalid data (missing title which might be required)

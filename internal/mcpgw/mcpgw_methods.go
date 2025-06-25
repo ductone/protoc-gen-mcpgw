@@ -33,7 +33,7 @@ func (module *Module) methodContext(ctx pgsgo.Context, w io.Writer, f pgs.File, 
 	ix.MCPGWV1Schema = true
 
 	serviceShortName := strings.TrimSuffix(ctx.Name(service).String(), "Server")
-
+	methodFullName := fmt.Sprintf("%s_%s_FullMethodName", serviceShortName, ctx.Name(method).String())
 	ix.Context = true
 	ix.Proto = true
 	ix.Protojson = true
@@ -41,7 +41,7 @@ func (module *Module) methodContext(ctx pgsgo.Context, w io.Writer, f pgs.File, 
 
 	rv := &methodTemplateContext{
 		MethodDesc: mcpgw_v1.MethodDesc{
-			Method:        strings.TrimPrefix(method.FullyQualifiedName(), "."),
+			Method:        methodFullName,
 			Title:         mext.GetTitle(),
 			Description:   mext.GetDescription(),
 			ReadOnlyHint:  mext.GetReadOnlyHint(),
@@ -49,12 +49,9 @@ func (module *Module) methodContext(ctx pgsgo.Context, w io.Writer, f pgs.File, 
 			Idempotent:    mext.GetIdempotentHint(),
 			OpenWorldHint: mext.GetOpenWorldHint(),
 		},
-		ServerName: ctx.ServerName(service).String(),
-		MethodName: ctx.Name(method).String(),
-		FullMethodName: fmt.Sprintf("%s_%s_FullMethodName",
-			serviceShortName,
-			ctx.Name(method).String(),
-		),
+		ServerName:     ctx.ServerName(service).String(),
+		MethodName:     ctx.Name(method).String(),
+		FullMethodName: methodFullName,
 		MethodHandlerName: fmt.Sprintf("_%s_%s_MCPGW_Handler",
 			serviceShortName,
 			ctx.Name(method).String(),
