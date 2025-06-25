@@ -2,6 +2,7 @@ package v1
 
 import (
 	"context"
+	reflect "reflect"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
@@ -15,7 +16,7 @@ type ServiceDesc struct {
 
 type methodHandler func(srv interface{}, ctx context.Context, dec func(proto.Message) error, interceptor grpc.UnaryServerInterceptor) (proto.Message, error)
 type decoderHandler func(ctx context.Context, input DecoderInput, out proto.Message) error
-type inputSchemaHandler func() (map[string]any)
+type inputSchemaHandler func() map[string]any
 
 type MethodDesc struct {
 	Method        string
@@ -28,6 +29,8 @@ type MethodDesc struct {
 	Destructive   bool
 	Idempotent    bool
 	OpenWorldHint bool
+	RequestType   reflect.Type
+	ResponseType  reflect.Type
 }
 
 type ServiceRegistrar interface {

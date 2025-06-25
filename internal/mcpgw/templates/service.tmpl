@@ -1,4 +1,12 @@
 
+// Reflected request/response types for each method
+var (
+{{- range .Methods }}
+	{{ .RequestTypeName }} = reflect.TypeOf((*{{ .RequestType }})(nil)).Elem()
+	{{ .ResponseTypeName }} = reflect.TypeOf((*{{ .ResponseType }})(nil)).Elem()
+{{- end }}
+)
+
 func RegisterMCP{{- .ServerName -}}(s mcpgw_v1.ServiceRegistrar, srv {{ .ServerName -}}) {
 	s.RegisterService(&mcpgw_desc_{{- .ServerName -}}, srv)
 }
@@ -19,6 +27,8 @@ var mcpgw_desc_{{- .ServerName -}} = mcpgw_v1.ServiceDesc{
             Destructive: {{ .Destructive -}},
             Idempotent: {{ .Idempotent -}},
             OpenWorldHint: {{ .OpenWorldHint -}},
+			RequestType: {{- .RequestTypeName -}},
+			ResponseType: {{- .ResponseTypeName -}},
 		},
 		{{- end }}
 	},

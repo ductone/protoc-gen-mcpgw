@@ -3,12 +3,41 @@ package v1
 
 import (
 	context "context"
+	reflect "reflect"
 
 	mcpgw_v1 "github.com/ductone/protoc-gen-mcpgw/mcpgw/v1"
 	mcpgw_schema "github.com/ductone/protoc-gen-mcpgw/mcpgw/v1/schema"
 	grpc "google.golang.org/grpc"
 	protojson "google.golang.org/protobuf/encoding/protojson"
 	proto "google.golang.org/protobuf/proto"
+)
+
+// Reflected request/response types for each method
+var (
+	_BookstoreService_ListShelves_RequestType  = reflect.TypeOf((*ListShelvesRequest)(nil)).Elem()
+	_BookstoreService_ListShelves_ResponseType = reflect.TypeOf((*ListShelvesResponse)(nil)).Elem()
+	_BookstoreService_CreateShelf_RequestType  = reflect.TypeOf((*CreateShelfRequest)(nil)).Elem()
+	_BookstoreService_CreateShelf_ResponseType = reflect.TypeOf((*CreateShelfResponse)(nil)).Elem()
+	_BookstoreService_DeleteShelf_RequestType  = reflect.TypeOf((*DeleteShelfRequest)(nil)).Elem()
+	_BookstoreService_DeleteShelf_ResponseType = reflect.TypeOf((*DeleteShelfResponse)(nil)).Elem()
+	_BookstoreService_ListGenres_RequestType   = reflect.TypeOf((*ListGenresRequest)(nil)).Elem()
+	_BookstoreService_ListGenres_ResponseType  = reflect.TypeOf((*ListGenresResponse)(nil)).Elem()
+	_BookstoreService_CreateGenre_RequestType  = reflect.TypeOf((*CreateGenreRequest)(nil)).Elem()
+	_BookstoreService_CreateGenre_ResponseType = reflect.TypeOf((*CreateGenreResponse)(nil)).Elem()
+	_BookstoreService_GetGenre_RequestType     = reflect.TypeOf((*GetGenreRequest)(nil)).Elem()
+	_BookstoreService_GetGenre_ResponseType    = reflect.TypeOf((*GetGenreResponse)(nil)).Elem()
+	_BookstoreService_DeleteGenre_RequestType  = reflect.TypeOf((*DeleteGenreRequest)(nil)).Elem()
+	_BookstoreService_DeleteGenre_ResponseType = reflect.TypeOf((*DeleteGenreResponse)(nil)).Elem()
+	_BookstoreService_CreateBook_RequestType   = reflect.TypeOf((*CreateBookRequest)(nil)).Elem()
+	_BookstoreService_CreateBook_ResponseType  = reflect.TypeOf((*CreateBookResponse)(nil)).Elem()
+	_BookstoreService_GetBook_RequestType      = reflect.TypeOf((*GetBookRequest)(nil)).Elem()
+	_BookstoreService_GetBook_ResponseType     = reflect.TypeOf((*GetBookResponse)(nil)).Elem()
+	_BookstoreService_ListBooks_RequestType    = reflect.TypeOf((*ListBooksRequest)(nil)).Elem()
+	_BookstoreService_ListBooks_ResponseType   = reflect.TypeOf((*ListBooksResponse)(nil)).Elem()
+	_BookstoreService_DeleteBook_RequestType   = reflect.TypeOf((*DeleteBookRequest)(nil)).Elem()
+	_BookstoreService_DeleteBook_ResponseType  = reflect.TypeOf((*DeleteBookResponse)(nil)).Elem()
+	_BookstoreService_UpdateBook_RequestType   = reflect.TypeOf((*UpdateBookRequest)(nil)).Elem()
+	_BookstoreService_UpdateBook_ResponseType  = reflect.TypeOf((*UpdateBookResponse)(nil)).Elem()
 )
 
 func RegisterMCPBookstoreServiceServer(s mcpgw_v1.ServiceRegistrar, srv BookstoreServiceServer) {
@@ -30,6 +59,8 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			Destructive:   false,
 			Idempotent:    true,
 			OpenWorldHint: false,
+			RequestType:   _BookstoreService_ListShelves_RequestType,
+			ResponseType:  _BookstoreService_ListShelves_ResponseType,
 		},
 		{
 			Method:        BookstoreService_CreateShelf_FullMethodName,
@@ -42,6 +73,8 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			Destructive:   false,
 			Idempotent:    false,
 			OpenWorldHint: false,
+			RequestType:   _BookstoreService_CreateShelf_RequestType,
+			ResponseType:  _BookstoreService_CreateShelf_ResponseType,
 		},
 		{
 			Method:        BookstoreService_DeleteShelf_FullMethodName,
@@ -54,6 +87,8 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			Destructive:   true,
 			Idempotent:    false,
 			OpenWorldHint: false,
+			RequestType:   _BookstoreService_DeleteShelf_RequestType,
+			ResponseType:  _BookstoreService_DeleteShelf_ResponseType,
 		},
 		{
 			Method:        BookstoreService_ListGenres_FullMethodName,
@@ -66,6 +101,8 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			Destructive:   false,
 			Idempotent:    false,
 			OpenWorldHint: false,
+			RequestType:   _BookstoreService_ListGenres_RequestType,
+			ResponseType:  _BookstoreService_ListGenres_ResponseType,
 		},
 		{
 			Method:        BookstoreService_CreateGenre_FullMethodName,
@@ -78,6 +115,8 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			Destructive:   false,
 			Idempotent:    false,
 			OpenWorldHint: false,
+			RequestType:   _BookstoreService_CreateGenre_RequestType,
+			ResponseType:  _BookstoreService_CreateGenre_ResponseType,
 		},
 		{
 			Method:        BookstoreService_GetGenre_FullMethodName,
@@ -90,6 +129,8 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			Destructive:   false,
 			Idempotent:    false,
 			OpenWorldHint: false,
+			RequestType:   _BookstoreService_GetGenre_RequestType,
+			ResponseType:  _BookstoreService_GetGenre_ResponseType,
 		},
 		{
 			Method:        BookstoreService_DeleteGenre_FullMethodName,
@@ -102,6 +143,8 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			Destructive:   true,
 			Idempotent:    false,
 			OpenWorldHint: false,
+			RequestType:   _BookstoreService_DeleteGenre_RequestType,
+			ResponseType:  _BookstoreService_DeleteGenre_ResponseType,
 		},
 		{
 			Method:        BookstoreService_CreateBook_FullMethodName,
@@ -114,6 +157,8 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			Destructive:   true,
 			Idempotent:    true,
 			OpenWorldHint: true,
+			RequestType:   _BookstoreService_CreateBook_RequestType,
+			ResponseType:  _BookstoreService_CreateBook_ResponseType,
 		},
 		{
 			Method:        BookstoreService_GetBook_FullMethodName,
@@ -126,6 +171,8 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			Destructive:   false,
 			Idempotent:    true,
 			OpenWorldHint: true,
+			RequestType:   _BookstoreService_GetBook_RequestType,
+			ResponseType:  _BookstoreService_GetBook_ResponseType,
 		},
 		{
 			Method:        BookstoreService_ListBooks_FullMethodName,
@@ -138,6 +185,8 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			Destructive:   false,
 			Idempotent:    true,
 			OpenWorldHint: true,
+			RequestType:   _BookstoreService_ListBooks_RequestType,
+			ResponseType:  _BookstoreService_ListBooks_ResponseType,
 		},
 		{
 			Method:        BookstoreService_DeleteBook_FullMethodName,
@@ -150,6 +199,8 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			Destructive:   true,
 			Idempotent:    false,
 			OpenWorldHint: false,
+			RequestType:   _BookstoreService_DeleteBook_RequestType,
+			ResponseType:  _BookstoreService_DeleteBook_ResponseType,
 		},
 		{
 			Method:        BookstoreService_UpdateBook_FullMethodName,
@@ -162,6 +213,8 @@ var mcpgw_desc_BookstoreServiceServer = mcpgw_v1.ServiceDesc{
 			Destructive:   true,
 			Idempotent:    true,
 			OpenWorldHint: true,
+			RequestType:   _BookstoreService_UpdateBook_RequestType,
+			ResponseType:  _BookstoreService_UpdateBook_ResponseType,
 		},
 	},
 }

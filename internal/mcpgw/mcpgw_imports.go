@@ -19,6 +19,7 @@ type importTracker struct {
 	GRPC          bool
 	Context       bool
 	Proto         bool
+	Reflect       bool
 }
 
 type ImportAlias struct {

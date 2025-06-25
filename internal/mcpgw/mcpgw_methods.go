@@ -11,12 +11,16 @@ import (
 	mcpgw_v1 "github.com/ductone/protoc-gen-mcpgw/mcpgw/v1"
 )
 
+
 type methodTemplateContext struct {
 	mcpgw_v1.MethodDesc
 	MethodHandlerName      string
 	DecoderHandlerName     string
 	InputSchemaHandlerName string
 	RequestType            string
+	RequestTypeName        string
+	ResponseType           string
+	ResponseTypeName       string
 	ServerName             string
 	MethodName             string
 	FullMethodName         string
@@ -38,6 +42,7 @@ func (module *Module) methodContext(ctx pgsgo.Context, w io.Writer, f pgs.File, 
 	ix.Proto = true
 	ix.Protojson = true
 	ix.GRPC = true
+	ix.Reflect = true
 
 	rv := &methodTemplateContext{
 		MethodDesc: mcpgw_v1.MethodDesc{
@@ -64,7 +69,16 @@ func (module *Module) methodContext(ctx pgsgo.Context, w io.Writer, f pgs.File, 
 			serviceShortName,
 			ctx.Name(method).String(),
 		),
-		RequestType: ctx.Name(method.Input()).String(),
+		RequestTypeName: fmt.Sprintf("_%s_%s_RequestType",
+			serviceShortName,
+			ctx.Name(method).String(),
+		),
+		ResponseTypeName: fmt.Sprintf("_%s_%s_ResponseType",
+			serviceShortName,
+			ctx.Name(method).String(),
+		),
+		RequestType:  ctx.Name(method.Input()).String(),
+		ResponseType: ctx.Name(method.Output()).String(),
 	}
 	return rv, nil
 }
