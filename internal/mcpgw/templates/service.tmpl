@@ -9,7 +9,7 @@ var mcpgw_desc_{{- .ServerName -}} = mcpgw_v1.ServiceDesc{
 	Methods: []*mcpgw_v1.MethodDesc{
 		{{- range .Methods }}
 		{
-			Method: "{{- .Method -}}",
+			Method: {{- .Method -}},
 			Handler: {{ .MethodHandlerName -}},
 			Decoder: {{ .DecoderHandlerName -}},
             InputSchema: {{ .InputSchemaHandlerName -}},
