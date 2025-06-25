@@ -46,8 +46,6 @@ type MethodDescInterface interface {
 	GetDestructive() bool
 	GetIdempotent() bool
 	GetOpenWorldHint() bool
-	AssertRequestType(ctx context.Context, in proto.Message) (proto.Message, error)
-	AssertResponseType(ctx context.Context, in proto.Message) (proto.Message, error)
 
 	// Get concrete types at runtime
 	GetRequestType() reflect.Type
@@ -95,34 +93,6 @@ func (md *MethodDesc[TReq, TResp]) GetIdempotent() bool {
 
 func (md *MethodDesc[TReq, TResp]) GetOpenWorldHint() bool {
 	return md.OpenWorldHint
-}
-
-// AssertRequestType converts a proto.Message to the specific request type for this method
-func (md *MethodDesc[TReq, TResp]) AssertRequestType(ctx context.Context, in proto.Message) (proto.Message, error) {
-	if in == nil {
-		return nil, errors.New("request cannot be nil")
-	}
-
-	// Try to convert to the specific type
-	if req, ok := in.(TReq); ok {
-		return req, nil
-	}
-
-	return nil, fmt.Errorf("expected request type %T, got %T", (*TReq)(nil), in)
-}
-
-// AssertResponseType converts a proto.Message to the specific response type for this method
-func (md *MethodDesc[TReq, TResp]) AssertResponseType(ctx context.Context, in proto.Message) (proto.Message, error) {
-	if in == nil {
-		return nil, errors.New("response cannot be nil")
-	}
-
-	// Try to convert to the specific type
-	if resp, ok := in.(TResp); ok {
-		return resp, nil
-	}
-
-	return nil, fmt.Errorf("expected response type %T, got %T", (*TResp)(nil), in)
 }
 
 // GetRequestType returns the reflect.Type of the request type

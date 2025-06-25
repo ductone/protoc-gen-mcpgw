@@ -667,47 +667,6 @@ func TestConvertToConcreteType(t *testing.T) {
 		_, ok = newResp.(*v1.CreateGenreResponse)
 		assert.True(t, ok, "New response should be CreateGenreResponse")
 	})
-
-	t.Run("Assert_Methods", func(t *testing.T) {
-		methodDesc := mockRegistrar.methodDescs["/bookstore.v1.BookstoreService/CreateGenre"]
-		require.NotNil(t, methodDesc, "Method descriptor for CreateGenre should be registered")
-
-		// Test AssertRequestType method
-		originalReq := &v1.CreateGenreRequest{}
-		originalReq.SetName("Test Genre")
-
-		convertedReq, err := methodDesc.AssertRequestType(context.Background(), originalReq)
-		assert.NoError(t, err, "Should successfully assert request type")
-		assert.NotNil(t, convertedReq, "Converted request should not be nil")
-
-		genreReq, ok := convertedReq.(*v1.CreateGenreRequest)
-		assert.True(t, ok, "Should be convertible to CreateGenreRequest")
-		assert.Equal(t, "Test Genre", genreReq.GetName(), "Name should be preserved")
-
-		// Test AssertResponseType method
-		originalResp := &v1.CreateGenreResponse{}
-		genre := &v1.Genre{}
-		genre.SetId(456)
-		genre.SetName("Test Genre")
-		originalResp.SetGenre(genre)
-
-		convertedResp, err := methodDesc.AssertResponseType(context.Background(), originalResp)
-		assert.NoError(t, err, "Should successfully assert response type")
-		assert.NotNil(t, convertedResp, "Converted response should not be nil")
-
-		genreResp, ok := convertedResp.(*v1.CreateGenreResponse)
-		assert.True(t, ok, "Should be convertible to CreateGenreResponse")
-		assert.Equal(t, int64(456), genreResp.GetGenre().GetId(), "ID should be preserved")
-
-		// Test with wrong types
-		wrongReq := &v1.CreateBookRequest{}
-		_, err = methodDesc.AssertRequestType(context.Background(), wrongReq)
-		assert.Error(t, err, "Should fail to assert wrong request type")
-
-		wrongResp := &v1.CreateBookResponse{}
-		_, err = methodDesc.AssertResponseType(context.Background(), wrongResp)
-		assert.Error(t, err, "Should fail to assert wrong response type")
-	})
 }
 
 // mockBookstoreServer is a mock implementation of BookstoreServiceServer
