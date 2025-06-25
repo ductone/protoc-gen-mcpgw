@@ -7,16 +7,21 @@ import (
 
 	pgs "github.com/lyft/protoc-gen-star/v2"
 	pgsgo "github.com/lyft/protoc-gen-star/v2/lang/go"
-
-	mcpgw_v1 "github.com/ductone/protoc-gen-mcpgw/mcpgw/v1"
 )
 
 type methodTemplateContext struct {
-	mcpgw_v1.MethodDesc
+	Method                 string
+	Title                  string
+	Description            string
+	ReadOnlyHint           bool
+	Destructive            bool
+	Idempotent             bool
+	OpenWorldHint          bool
 	MethodHandlerName      string
 	DecoderHandlerName     string
 	InputSchemaHandlerName string
 	RequestType            string
+	ResponseType           string
 	ServerName             string
 	MethodName             string
 	FullMethodName         string
@@ -40,15 +45,13 @@ func (module *Module) methodContext(ctx pgsgo.Context, w io.Writer, f pgs.File, 
 	ix.GRPC = true
 
 	rv := &methodTemplateContext{
-		MethodDesc: mcpgw_v1.MethodDesc{
-			Method:        methodFullName,
-			Title:         mext.GetTitle(),
-			Description:   mext.GetDescription(),
-			ReadOnlyHint:  mext.GetReadOnlyHint(),
-			Destructive:   mext.GetDestructiveHint(),
-			Idempotent:    mext.GetIdempotentHint(),
-			OpenWorldHint: mext.GetOpenWorldHint(),
-		},
+		Method:         methodFullName,
+		Title:          mext.GetTitle(),
+		Description:    mext.GetDescription(),
+		ReadOnlyHint:   mext.GetReadOnlyHint(),
+		Destructive:    mext.GetDestructiveHint(),
+		Idempotent:     mext.GetIdempotentHint(),
+		OpenWorldHint:  mext.GetOpenWorldHint(),
 		ServerName:     ctx.ServerName(service).String(),
 		MethodName:     ctx.Name(method).String(),
 		FullMethodName: methodFullName,
@@ -64,7 +67,8 @@ func (module *Module) methodContext(ctx pgsgo.Context, w io.Writer, f pgs.File, 
 			serviceShortName,
 			ctx.Name(method).String(),
 		),
-		RequestType: ctx.Name(method.Input()).String(),
+		RequestType:  ctx.Name(method.Input()).String(),
+		ResponseType: ctx.Name(method.Output()).String(),
 	}
 	return rv, nil
 }

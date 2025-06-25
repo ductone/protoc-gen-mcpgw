@@ -19,11 +19,11 @@ const (
 	contextKeyMethodDesc = contextKey("methodDesc")
 )
 
-func MethodDescContext(ctx context.Context) *MethodDesc {
-	return ctx.Value(contextKeyMethodDesc).(*MethodDesc)
+func MethodDescContext(ctx context.Context) MethodDescInterface {
+	return ctx.Value(contextKeyMethodDesc).(MethodDescInterface)
 }
 
-func NewMethodDescContext(ctx context.Context, methodDesc *MethodDesc) context.Context {
+func NewMethodDescContext(ctx context.Context, methodDesc MethodDescInterface) context.Context {
 	return context.WithValue(ctx, contextKeyMethodDesc, methodDesc)
 }
 

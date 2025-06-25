@@ -3,6 +3,7 @@ package v1_test
 import (
 	"context"
 	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -88,10 +89,10 @@ func TestInputSchemaValidation(t *testing.T) {
 		require.NotNil(t, methodDesc, "Method descriptor for CreateGenre should be registered")
 
 		// Check if the InputSchema function is available
-		require.NotNil(t, methodDesc.InputSchema, "InputSchema function should be available")
+		require.NotNil(t, methodDesc.GetInputSchema(), "InputSchema function should be available")
 
 		// Get the schema as map[string]any
-		schemaMap := methodDesc.InputSchema()
+		schemaMap := methodDesc.GetInputSchema()()
 		require.NotNil(t, schemaMap, "Schema map should not be nil")
 
 		// Convert schema to JSON
@@ -124,10 +125,10 @@ func TestInputSchemaValidation(t *testing.T) {
 		require.NotNil(t, methodDesc, "Method descriptor for CreateBook should be registered")
 
 		// Check if the InputSchema function is available
-		require.NotNil(t, methodDesc.InputSchema, "InputSchema function should be available")
+		require.NotNil(t, methodDesc.GetInputSchema(), "InputSchema function should be available")
 
 		// Get the schema as map[string]any
-		schemaMap := methodDesc.InputSchema()
+		schemaMap := methodDesc.GetInputSchema()()
 		require.NotNil(t, schemaMap, "Schema map should not be nil")
 
 		// Convert schema to JSON
@@ -202,19 +203,19 @@ func ValidatingInterceptor(t *testing.T) grpc.UnaryServerInterceptor {
 
 // MockServiceRegistrar implements mcpgw_v1.ServiceRegistrar for testing
 type MockServiceRegistrar struct {
-	methodDescs map[string]*mcpgw_v1.MethodDesc
+	methodDescs map[string]mcpgw_v1.MethodDescInterface
 }
 
 func NewMockServiceRegistrar() *MockServiceRegistrar {
 	return &MockServiceRegistrar{
-		methodDescs: make(map[string]*mcpgw_v1.MethodDesc),
+		methodDescs: make(map[string]mcpgw_v1.MethodDescInterface),
 	}
 }
 
 func (m *MockServiceRegistrar) RegisterService(sd *mcpgw_v1.ServiceDesc, ss any) {
 	// Store the method descriptors for later lookup
 	for _, md := range sd.Methods {
-		m.methodDescs[md.Method] = md
+		m.methodDescs[md.GetMethod()] = md
 	}
 }
 
@@ -274,7 +275,7 @@ func TestMCPGWRegistration(t *testing.T) {
 		req := &v1.CreateGenreRequest{}
 
 		// Use the decoder to decode the input
-		err := methodDesc.Decoder(context.Background(), input, req)
+		err := methodDesc.GetDecoder()(context.Background(), input, req)
 		assert.NoError(t, err, "Decoding should succeed")
 
 		// Verify the decoded request using the proper accessor methods
@@ -303,7 +304,7 @@ func TestMCPGWRegistration(t *testing.T) {
 		req := &v1.CreateBookRequest{}
 
 		// Use the decoder to decode the input
-		err := methodDesc.Decoder(context.Background(), input, req)
+		err := methodDesc.GetDecoder()(context.Background(), input, req)
 		assert.NoError(t, err, "Decoding should succeed")
 
 		// Verify the decoded request
@@ -338,7 +339,7 @@ func TestMCPGWRegistration(t *testing.T) {
 		req := &v1.CreateGenreRequest{}
 
 		// Decode the input
-		err := methodDesc.Decoder(ctx, input, req)
+		err := methodDesc.GetDecoder()(ctx, input, req)
 		assert.NoError(t, err)
 
 		// Create a custom decoder function that uses UnmarshalFromMap directly
@@ -353,7 +354,7 @@ func TestMCPGWRegistration(t *testing.T) {
 		}
 
 		// Call the handler without interceptor
-		resp, err := methodDesc.Handler(server, ctx, decoder, nil)
+		resp, err := methodDesc.GetHandler()(server, ctx, decoder, nil)
 		assert.NoError(t, err)
 
 		// Validate response
@@ -370,7 +371,7 @@ func TestMCPGWRegistration(t *testing.T) {
 			return handler(ctx, req)
 		}
 
-		resp, err = methodDesc.Handler(server, ctx, decoder, interceptor)
+		resp, err = methodDesc.GetHandler()(server, ctx, decoder, interceptor)
 		assert.NoError(t, err)
 		assert.True(t, interceptorCalled, "Interceptor should have been called")
 
@@ -412,7 +413,7 @@ func TestProtoValidateMiddleware(t *testing.T) {
 		}
 
 		// Call the handler with the validating interceptor
-		resp, err := methodDesc.Handler(server, context.Background(), decoder, validatingInterceptor)
+		resp, err := methodDesc.GetHandler()(server, context.Background(), decoder, validatingInterceptor)
 
 		// No validation errors should occur for valid input
 		assert.NoError(t, err, "Valid input should pass validation")
@@ -437,7 +438,7 @@ func TestProtoValidateMiddleware(t *testing.T) {
 		}
 
 		// Call the handler with the validating interceptor
-		resp, err := methodDesc.Handler(server, context.Background(), decoder, validatingInterceptor)
+		resp, err := methodDesc.GetHandler()(server, context.Background(), decoder, validatingInterceptor)
 
 		// Note: If there are no validation rules defined for this field in the proto,
 		// this will still pass. The test is designed to demonstrate the validation process.
@@ -477,7 +478,7 @@ func TestProtoValidateMiddleware(t *testing.T) {
 		}
 
 		// Call the handler with the validating interceptor
-		resp, err := bookMethodDesc.Handler(server, context.Background(), decoder, validatingInterceptor)
+		resp, err := bookMethodDesc.GetHandler()(server, context.Background(), decoder, validatingInterceptor)
 
 		// Log the validation result for debugging
 		t.Logf("Book validation result: %v", err)
@@ -490,6 +491,222 @@ func TestProtoValidateMiddleware(t *testing.T) {
 			// No validation rules are triggered or defined
 			assert.NotNil(t, resp, "Response should not be nil when validation passes")
 		}
+	})
+}
+
+// TestConvertToConcreteType tests the ConvertToConcreteType helper function
+func TestConvertToConcreteType(t *testing.T) {
+	// Create a mock service registrar
+	mockRegistrar := NewMockServiceRegistrar()
+
+	// Register the BookstoreService
+	server := &mockBookstoreServer{}
+	v1.RegisterMCPBookstoreServiceServer(mockRegistrar, server)
+
+	// Test CreateGenre method type conversion
+	t.Run("CreateGenre_Request_Valid", func(t *testing.T) {
+		methodDesc := mockRegistrar.methodDescs["/bookstore.v1.BookstoreService/CreateGenre"]
+		require.NotNil(t, methodDesc, "Method descriptor for CreateGenre should be registered")
+
+		// Create a request of the correct type
+		originalReq := &v1.CreateGenreRequest{}
+		originalReq.SetName("Test Genre")
+
+		// Convert using the helper function
+		convertedReq, err := mcpgw_v1.ConvertToConcreteType(methodDesc, originalReq, true)
+		assert.NoError(t, err, "Should successfully convert to concrete type")
+		assert.NotNil(t, convertedReq, "Converted request should not be nil")
+
+		// Verify it's the correct type
+		genreReq, ok := convertedReq.(*v1.CreateGenreRequest)
+		assert.True(t, ok, "Should be convertible to CreateGenreRequest")
+		assert.Equal(t, "Test Genre", genreReq.GetName(), "Name should be preserved")
+	})
+
+	t.Run("CreateGenre_Request_WrongType", func(t *testing.T) {
+		methodDesc := mockRegistrar.methodDescs["/bookstore.v1.BookstoreService/CreateGenre"]
+		require.NotNil(t, methodDesc, "Method descriptor for CreateGenre should be registered")
+
+		// Create a request of the wrong type
+		wrongReq := &v1.CreateBookRequest{}
+		wrongReq.SetShelf("test-shelf")
+
+		// Convert using the helper function - should fail
+		convertedReq, err := mcpgw_v1.ConvertToConcreteType(methodDesc, wrongReq, true)
+		assert.Error(t, err, "Should fail to convert wrong type")
+		assert.Nil(t, convertedReq, "Converted request should be nil")
+		assert.Contains(t, err.Error(), "expected request type", "Error should mention expected type")
+	})
+
+	t.Run("CreateGenre_Response_Valid", func(t *testing.T) {
+		methodDesc := mockRegistrar.methodDescs["/bookstore.v1.BookstoreService/CreateGenre"]
+		require.NotNil(t, methodDesc, "Method descriptor for CreateGenre should be registered")
+
+		// Create a response of the correct type
+		originalResp := &v1.CreateGenreResponse{}
+		genre := &v1.Genre{}
+		genre.SetId(123)
+		genre.SetName("Test Genre")
+		originalResp.SetGenre(genre)
+
+		// Convert using the helper function
+		convertedResp, err := mcpgw_v1.ConvertToConcreteType(methodDesc, originalResp, false)
+		assert.NoError(t, err, "Should successfully convert to concrete type")
+		assert.NotNil(t, convertedResp, "Converted response should not be nil")
+
+		// Verify it's the correct type
+		genreResp, ok := convertedResp.(*v1.CreateGenreResponse)
+		assert.True(t, ok, "Should be convertible to CreateGenreResponse")
+		assert.Equal(t, int64(123), genreResp.GetGenre().GetId(), "ID should be preserved")
+		assert.Equal(t, "Test Genre", genreResp.GetGenre().GetName(), "Name should be preserved")
+	})
+
+	t.Run("CreateGenre_Response_WrongType", func(t *testing.T) {
+		methodDesc := mockRegistrar.methodDescs["/bookstore.v1.BookstoreService/CreateGenre"]
+		require.NotNil(t, methodDesc, "Method descriptor for CreateGenre should be registered")
+
+		// Create a response of the wrong type
+		wrongResp := &v1.CreateBookResponse{}
+
+		// Convert using the helper function - should fail
+		convertedResp, err := mcpgw_v1.ConvertToConcreteType(methodDesc, wrongResp, false)
+		assert.Error(t, err, "Should fail to convert wrong type")
+		assert.Nil(t, convertedResp, "Converted response should be nil")
+		assert.Contains(t, err.Error(), "expected response type", "Error should mention expected type")
+	})
+
+	// Test CreateBook method type conversion
+	t.Run("CreateBook_Request_Valid", func(t *testing.T) {
+		methodDesc := mockRegistrar.methodDescs["/bookstore.v1.BookstoreService/CreateBook"]
+		require.NotNil(t, methodDesc, "Method descriptor for CreateBook should be registered")
+
+		// Create a request of the correct type
+		originalReq := &v1.CreateBookRequest{}
+		originalReq.SetShelf("test-shelf")
+		book := &v1.Book{}
+		book.SetId("test-book")
+		book.SetTitle("Test Book")
+		originalReq.SetBook(book)
+
+		// Convert using the helper function
+		convertedReq, err := mcpgw_v1.ConvertToConcreteType(methodDesc, originalReq, true)
+		assert.NoError(t, err, "Should successfully convert to concrete type")
+		assert.NotNil(t, convertedReq, "Converted request should not be nil")
+
+		// Verify it's the correct type
+		bookReq, ok := convertedReq.(*v1.CreateBookRequest)
+		assert.True(t, ok, "Should be convertible to CreateBookRequest")
+		assert.Equal(t, "test-shelf", bookReq.GetShelf(), "Shelf should be preserved")
+		assert.Equal(t, "test-book", bookReq.GetBook().GetId(), "Book ID should be preserved")
+		assert.Equal(t, "Test Book", bookReq.GetBook().GetTitle(), "Book title should be preserved")
+	})
+
+	t.Run("CreateBook_Request_WrongType", func(t *testing.T) {
+		methodDesc := mockRegistrar.methodDescs["/bookstore.v1.BookstoreService/CreateBook"]
+		require.NotNil(t, methodDesc, "Method descriptor for CreateBook should be registered")
+
+		// Create a request of the wrong type
+		wrongReq := &v1.CreateGenreRequest{}
+		wrongReq.SetName("Test Genre")
+
+		// Convert using the helper function - should fail
+		convertedReq, err := mcpgw_v1.ConvertToConcreteType(methodDesc, wrongReq, true)
+		assert.Error(t, err, "Should fail to convert wrong type")
+		assert.Nil(t, convertedReq, "Converted request should be nil")
+		assert.Contains(t, err.Error(), "expected request type", "Error should mention expected type")
+	})
+
+	// Test edge cases
+	t.Run("Nil_Input", func(t *testing.T) {
+		methodDesc := mockRegistrar.methodDescs["/bookstore.v1.BookstoreService/CreateGenre"]
+		require.NotNil(t, methodDesc, "Method descriptor for CreateGenre should be registered")
+
+		// Test with nil input
+		convertedReq, err := mcpgw_v1.ConvertToConcreteType(methodDesc, nil, true)
+		assert.Error(t, err, "Should fail with nil input")
+		assert.Nil(t, convertedReq, "Converted request should be nil")
+		assert.Contains(t, err.Error(), "input cannot be nil", "Error should mention nil input")
+	})
+
+	t.Run("Type_Information_Retrieval", func(t *testing.T) {
+		methodDesc := mockRegistrar.methodDescs["/bookstore.v1.BookstoreService/CreateGenre"]
+		require.NotNil(t, methodDesc, "Method descriptor for CreateGenre should be registered")
+
+		// Test that we can retrieve type information
+		requestType := methodDesc.GetRequestType()
+		responseType := methodDesc.GetResponseType()
+
+		assert.NotNil(t, requestType, "Request type should not be nil")
+		assert.NotNil(t, responseType, "Response type should not be nil")
+
+		// Debug: print the actual types we're getting
+		t.Logf("Request type: %v", requestType)
+		t.Logf("Response type: %v", responseType)
+		t.Logf("Expected request type: %v", reflect.TypeOf(&v1.CreateGenreRequest{}))
+		t.Logf("Expected response type: %v", reflect.TypeOf(&v1.CreateGenreResponse{}))
+
+		// Verify the types are correct - our methods return pointer types
+		expectedReqType := reflect.TypeOf(&v1.CreateGenreRequest{})
+		expectedRespType := reflect.TypeOf(&v1.CreateGenreResponse{})
+
+		// The types should match exactly
+		assert.Equal(t, expectedReqType, requestType, "Request type should match CreateGenreRequest")
+		assert.Equal(t, expectedRespType, responseType, "Response type should match CreateGenreResponse")
+
+		// Test creating new instances
+		newReq := methodDesc.CreateRequest()
+		newResp := methodDesc.CreateResponse()
+
+		assert.NotNil(t, newReq, "New request should not be nil")
+		assert.NotNil(t, newResp, "New response should not be nil")
+
+		// Verify they're the correct types
+		_, ok := newReq.(*v1.CreateGenreRequest)
+		assert.True(t, ok, "New request should be CreateGenreRequest")
+
+		_, ok = newResp.(*v1.CreateGenreResponse)
+		assert.True(t, ok, "New response should be CreateGenreResponse")
+	})
+
+	t.Run("Assert_Methods", func(t *testing.T) {
+		methodDesc := mockRegistrar.methodDescs["/bookstore.v1.BookstoreService/CreateGenre"]
+		require.NotNil(t, methodDesc, "Method descriptor for CreateGenre should be registered")
+
+		// Test AssertRequestType method
+		originalReq := &v1.CreateGenreRequest{}
+		originalReq.SetName("Test Genre")
+
+		convertedReq, err := methodDesc.AssertRequestType(context.Background(), originalReq)
+		assert.NoError(t, err, "Should successfully assert request type")
+		assert.NotNil(t, convertedReq, "Converted request should not be nil")
+
+		genreReq, ok := convertedReq.(*v1.CreateGenreRequest)
+		assert.True(t, ok, "Should be convertible to CreateGenreRequest")
+		assert.Equal(t, "Test Genre", genreReq.GetName(), "Name should be preserved")
+
+		// Test AssertResponseType method
+		originalResp := &v1.CreateGenreResponse{}
+		genre := &v1.Genre{}
+		genre.SetId(456)
+		genre.SetName("Test Genre")
+		originalResp.SetGenre(genre)
+
+		convertedResp, err := methodDesc.AssertResponseType(context.Background(), originalResp)
+		assert.NoError(t, err, "Should successfully assert response type")
+		assert.NotNil(t, convertedResp, "Converted response should not be nil")
+
+		genreResp, ok := convertedResp.(*v1.CreateGenreResponse)
+		assert.True(t, ok, "Should be convertible to CreateGenreResponse")
+		assert.Equal(t, int64(456), genreResp.GetGenre().GetId(), "ID should be preserved")
+
+		// Test with wrong types
+		wrongReq := &v1.CreateBookRequest{}
+		_, err = methodDesc.AssertRequestType(context.Background(), wrongReq)
+		assert.Error(t, err, "Should fail to assert wrong request type")
+
+		wrongResp := &v1.CreateBookResponse{}
+		_, err = methodDesc.AssertResponseType(context.Background(), wrongResp)
+		assert.Error(t, err, "Should fail to assert wrong response type")
 	})
 }
 

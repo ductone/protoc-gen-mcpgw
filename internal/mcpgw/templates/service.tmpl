@@ -1,4 +1,3 @@
-
 func RegisterMCP{{- .ServerName -}}(s mcpgw_v1.ServiceRegistrar, srv {{ .ServerName -}}) {
 	s.RegisterService(&mcpgw_desc_{{- .ServerName -}}, srv)
 }
@@ -6,9 +5,9 @@ func RegisterMCP{{- .ServerName -}}(s mcpgw_v1.ServiceRegistrar, srv {{ .ServerN
 var mcpgw_desc_{{- .ServerName -}} = mcpgw_v1.ServiceDesc{
 	Name: "{{ .FullyQualifiedName -}}",
 	HandlerType: (*{{- .ServerName -}})(nil),
-	Methods: []*mcpgw_v1.MethodDesc{
+	Methods: []mcpgw_v1.MethodDescInterface{
 		{{- range .Methods }}
-		{
+		&mcpgw_v1.MethodDesc[*{{ .RequestType -}}, *{{ .ResponseType -}}]{
 			Method: {{- .Method -}},
 			Handler: {{ .MethodHandlerName -}},
 			Decoder: {{ .DecoderHandlerName -}},
