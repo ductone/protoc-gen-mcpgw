@@ -435,6 +435,20 @@ func isFieldRequired(fd protoreflect.FieldDescriptor) bool {
 		return false
 	}
 
+	// If mcpgw field option explicitly sets required, honor it (true or false)
+	if proto.HasExtension(opts, mcpgw_v1.E_Field) {
+		if extVal := proto.GetExtension(opts, mcpgw_v1.E_Field); extVal != nil {
+			if extMsg, ok := extVal.(proto.Message); ok && extMsg != nil {
+				m := extMsg.ProtoReflect()
+				if reqField := m.Descriptor().Fields().ByName("required"); reqField != nil {
+					if m.Has(reqField) {
+						return m.Get(reqField).Bool()
+					}
+				}
+			}
+		}
+	}
+
 	// Use reflection to check for validation rules, as it's more resilient
 	// to different versions of the validate package
 	optsReflect := opts.ProtoReflect()

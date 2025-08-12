@@ -129,7 +129,10 @@ service BookstoreService {
 
 message CreateGenreRequest {
   string name = 1 [
-    (mcpgw.v1.field) = {description: "The name of the genre"},
+    (mcpgw.v1.field) = {
+      description: "The name of the genre"
+      required: true
+    },
     (buf.validate.field).string.min_len = 1,
     (buf.validate.field).string.max_len = 50
   ];

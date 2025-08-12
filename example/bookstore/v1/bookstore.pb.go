@@ -3260,10 +3260,10 @@ var File_bookstore_v1_bookstore_proto protoreflect.FileDescriptor
 
 const file_bookstore_v1_bookstore_proto_rawDesc = "" +
 	"\n" +
-	"\x1cbookstore/v1/bookstore.proto\x12\fbookstore.v1\x1a\x1bbuf/validate/validate.proto\x1a\x19google/protobuf/any.proto\x1a google/protobuf/field_mask.proto\x1a!google/protobuf/go_features.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcpgw/v1/mcpgw.proto\"N\n" +
-	"\x12CreateGenreRequest\x128\n" +
-	"\x04name\x18\x01 \x01(\tB$\xbaH\x06r\x04\x10\x01\x182\xe2\x9c\x04\x17\n" +
-	"\x15The name of the genreR\x04name\"@\n" +
+	"\x1cbookstore/v1/bookstore.proto\x12\fbookstore.v1\x1a\x1bbuf/validate/validate.proto\x1a\x19google/protobuf/any.proto\x1a google/protobuf/field_mask.proto\x1a!google/protobuf/go_features.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcpgw/v1/mcpgw.proto\"P\n" +
+	"\x12CreateGenreRequest\x12:\n" +
+	"\x04name\x18\x01 \x01(\tB&\xbaH\x06r\x04\x10\x01\x182\xe2\x9c\x04\x19\n" +
+	"\x15The name of the genre\x10\x01R\x04name\"@\n" +
 	"\x13CreateGenreResponse\x12)\n" +
 	"\x05genre\x18\x01 \x01(\v2\x13.bookstore.v1.GenreR\x05genre\",\n" +
 	"\x0fGetGenreRequest\x12\x19\n" +
