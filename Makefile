@@ -18,6 +18,10 @@ test:
 example: build
 	buf --debug generate --template buf.example.gen.yaml --path example/bookstore
 
+.PHONY: print-schemas
+print-schemas: example
+	go run ./example/cmd/printschemas
+
 .PHONY: fmt
 fmt:
 	buf format -w 
