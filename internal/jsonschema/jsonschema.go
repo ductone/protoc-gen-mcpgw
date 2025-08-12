@@ -104,11 +104,41 @@ func GenerateJSONSchema(md protoreflect.MessageDescriptor) (map[string]any, erro
 	// Track visited message types to prevent infinite recursion
 	visited := make(map[protoreflect.FullName]bool)
 
-	return schemaForMessage(md, visited)
+	// Determine message-level options
+	allowNulls := messageAllowsNulls(md)
+
+	return schemaForMessage(md, visited, allowNulls)
+}
+
+// messageAllowsNulls reads mcpgw.v1.message options and returns true if allow_nulls is set.
+func messageAllowsNulls(md protoreflect.MessageDescriptor) bool {
+	if md == nil {
+		return false
+	}
+	opts := md.Options()
+	if opts == nil {
+		return false
+	}
+	if !proto.HasExtension(opts, mcpgw_v1.E_Message) {
+		return false
+	}
+	if extVal := proto.GetExtension(opts, mcpgw_v1.E_Message); extVal != nil {
+		if extMsg, ok := extVal.(*mcpgw_v1.MessageOptions); ok && extMsg != nil {
+			// Reflectively check presence to respect explicit false
+			m := extMsg.ProtoReflect()
+			if f := m.Descriptor().Fields().ByName("allow_nulls"); f != nil {
+				if m.Has(f) {
+					return m.Get(f).Bool()
+				}
+			}
+			// If not explicitly set, default is false
+		}
+	}
+	return false
 }
 
 // schemaForMessage generates a JSON Schema for a message type, tracking visited messages to prevent recursion
-func schemaForMessage(md protoreflect.MessageDescriptor, visited map[protoreflect.FullName]bool) (map[string]any, error) {
+func schemaForMessage(md protoreflect.MessageDescriptor, visited map[protoreflect.FullName]bool, allowNulls bool) (map[string]any, error) {
 	// Check for recursion
 	if visited[md.FullName()] {
 		// For recursive types, return a generic object schema
@@ -143,7 +173,7 @@ func schemaForMessage(md protoreflect.MessageDescriptor, visited map[protoreflec
 		fd := fields.Get(i)
 
 		// Generate schema for this field
-		fieldSchema, err := schemaForField(fd, visited)
+		fieldSchema, err := schemaForField(fd, visited, allowNulls)
 		if err != nil {
 			return nil, fmt.Errorf("error processing field %s: %w", fd.Name(), err)
 		}
@@ -167,27 +197,27 @@ func schemaForMessage(md protoreflect.MessageDescriptor, visited map[protoreflec
 }
 
 // schemaForField generates a JSON Schema for a single field
-func schemaForField(fd protoreflect.FieldDescriptor, visited map[protoreflect.FullName]bool) (map[string]any, error) {
+func schemaForField(fd protoreflect.FieldDescriptor, visited map[protoreflect.FullName]bool, allowNulls bool) (map[string]any, error) {
 	// Handle repeated fields (non-map)
 	if fd.IsList() && !fd.IsMap() {
-		return schemaForRepeatedField(fd, visited)
+		return schemaForRepeatedField(fd, visited, allowNulls)
 	}
 
 	// Handle map fields
 	if fd.IsMap() {
-		return schemaForMapField(fd, visited)
+		return schemaForMapField(fd, visited, allowNulls)
 	}
 
 	// Handle well-known types
 	if fd.Kind() == protoreflect.MessageKind {
-		wktSchema, isWKT := schemaForWellKnownType(fd.Message())
+		wktSchema, isWKT := schemaForWellKnownType(fd.Message(), allowNulls)
 		if isWKT {
 			return wktSchema, nil
 		}
 	}
 
 	// Handle regular fields based on kind
-	fieldSchema, err := schemaForKind(fd, visited)
+	fieldSchema, err := schemaForKind(fd, visited, allowNulls)
 	if err != nil {
 		return nil, err
 	}
@@ -199,13 +229,15 @@ func schemaForField(fd protoreflect.FieldDescriptor, visited map[protoreflect.Fu
 	applyValidationRules(fd, fieldSchema)
 
 	// Handle nullability for proto3 optional fields or proto2 optional fields
-	applyNullability(fd, fieldSchema)
+	if allowNulls {
+		applyNullability(fd, fieldSchema)
+	}
 
 	return fieldSchema, nil
 }
 
 // schemaForKind generates a schema based on the field's kind
-func schemaForKind(fd protoreflect.FieldDescriptor, visited map[protoreflect.FullName]bool) (map[string]any, error) {
+func schemaForKind(fd protoreflect.FieldDescriptor, visited map[protoreflect.FullName]bool, allowNulls bool) (map[string]any, error) {
 	switch fd.Kind() {
 	case protoreflect.BoolKind:
 		return map[string]any{"type": "boolean"}, nil
@@ -251,7 +283,7 @@ func schemaForKind(fd protoreflect.FieldDescriptor, visited map[protoreflect.Ful
 
 	case protoreflect.MessageKind:
 		// Generate schema for nested message
-		msgSchema, err := schemaForMessage(fd.Message(), visited)
+		msgSchema, err := schemaForMessage(fd.Message(), visited, allowNulls)
 		if err != nil {
 			return nil, fmt.Errorf("error processing nested message %s: %w", fd.Message().Name(), err)
 		}
@@ -285,9 +317,9 @@ func schemaForEnum(ed protoreflect.EnumDescriptor) map[string]any {
 }
 
 // schemaForRepeatedField handles repeated fields (creates an array schema)
-func schemaForRepeatedField(fd protoreflect.FieldDescriptor, visited map[protoreflect.FullName]bool) (map[string]any, error) {
+func schemaForRepeatedField(fd protoreflect.FieldDescriptor, visited map[protoreflect.FullName]bool, allowNulls bool) (map[string]any, error) {
 	// Create item schema (schema for a single element of the array)
-	itemSchema, err := schemaForKind(fd, visited)
+	itemSchema, err := schemaForKind(fd, visited, allowNulls)
 	if err != nil {
 		return nil, err
 	}
@@ -298,17 +330,19 @@ func schemaForRepeatedField(fd protoreflect.FieldDescriptor, visited map[protore
 		"items": itemSchema,
 	}
 
-	// In Proto JSON, null is accepted as an alias for empty array
-	schema["type"] = []string{"array", "null"}
+	if allowNulls {
+		// In Proto JSON, null can be accepted as an alias for empty array
+		schema["type"] = []string{"array", "null"}
+	}
 
 	return schema, nil
 }
 
 // schemaForMapField handles map fields
-func schemaForMapField(fd protoreflect.FieldDescriptor, visited map[protoreflect.FullName]bool) (map[string]any, error) {
+func schemaForMapField(fd protoreflect.FieldDescriptor, visited map[protoreflect.FullName]bool, allowNulls bool) (map[string]any, error) {
 	// Get the value descriptor and generate its schema
 	valueDesc := fd.MapValue()
-	valueSchema, err := schemaForField(valueDesc, visited)
+	valueSchema, err := schemaForField(valueDesc, visited, allowNulls)
 	if err != nil {
 		return nil, err
 	}
@@ -323,33 +357,62 @@ func schemaForMapField(fd protoreflect.FieldDescriptor, visited map[protoreflect
 }
 
 // schemaForWellKnownType returns specialized schema for well-known Protobuf types
-func schemaForWellKnownType(md protoreflect.MessageDescriptor) (map[string]any, bool) {
+func schemaForWellKnownType(md protoreflect.MessageDescriptor, allowNulls bool) (map[string]any, bool) {
 	fullName := string(md.FullName())
 
 	switch fullName {
 	// Wrapper types
 	case stringValueFullName:
-		return map[string]any{"type": []string{"string", "null"}}, true
+		if allowNulls {
+			return map[string]any{"type": []string{"string", "null"}}, true
+		}
+		return map[string]any{"type": "string"}, true
 	case boolValueFullName:
-		return map[string]any{"type": []string{"boolean", "null"}}, true
+		if allowNulls {
+			return map[string]any{"type": []string{"boolean", "null"}}, true
+		}
+		return map[string]any{"type": "boolean"}, true
 	case int32ValueFullName, uint32ValueFullName:
-		return map[string]any{"type": []string{"integer", "null"}}, true
+		if allowNulls {
+			return map[string]any{"type": []string{"integer", "null"}}, true
+		}
+		return map[string]any{"type": "integer"}, true
 	case int64ValueFullName, uint64ValueFullName:
+		if allowNulls {
+			return map[string]any{
+				"type":    []string{"string", "null"},
+				"pattern": "^-?[0-9]+$",
+			}, true
+		}
 		return map[string]any{
-			"type":    []string{"string", "null"},
+			"type":    "string",
 			"pattern": "^-?[0-9]+$",
 		}, true
 	case floatValueFullName, doubleValueFullName:
+		if allowNulls {
+			return map[string]any{
+				"oneOf": []map[string]any{
+					{"type": "number"},
+					{"type": "string", "enum": []string{"NaN", "Infinity", "-Infinity"}},
+					{"type": "null"},
+				},
+			}, true
+		}
 		return map[string]any{
 			"oneOf": []map[string]any{
 				{"type": "number"},
 				{"type": "string", "enum": []string{"NaN", "Infinity", "-Infinity"}},
-				{"type": "null"},
 			},
 		}, true
 	case bytesValueFullName:
+		if allowNulls {
+			return map[string]any{
+				"type":            []string{"string", "null"},
+				"contentEncoding": "base64",
+			}, true
+		}
 		return map[string]any{
-			"type":            []string{"string", "null"},
+			"type":            "string",
 			"contentEncoding": "base64",
 		}, true
 

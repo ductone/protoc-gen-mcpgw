@@ -23,9 +23,12 @@ const (
 )
 
 type MessageOptions struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_AllowNulls  bool                   `protobuf:"varint,1,opt,name=allow_nulls,json=allowNulls"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *MessageOptions) Reset() {
@@ -53,15 +56,47 @@ func (x *MessageOptions) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+func (x *MessageOptions) GetAllowNulls() bool {
+	if x != nil {
+		return x.xxx_hidden_AllowNulls
+	}
+	return false
+}
+
+func (x *MessageOptions) SetAllowNulls(v bool) {
+	x.xxx_hidden_AllowNulls = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+}
+
+func (x *MessageOptions) HasAllowNulls() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+}
+
+func (x *MessageOptions) ClearAllowNulls() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_AllowNulls = false
+}
+
 type MessageOptions_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
+	// When true, generated JSON Schemas for this message allow explicit null values
+	// for fields with presence (including scalars with presence and nested messages),
+	// and treat repeated fields as nullable arrays. Default is false (no nulls).
+	AllowNulls *bool
 }
 
 func (b0 MessageOptions_builder) Build() *MessageOptions {
 	m0 := &MessageOptions{}
 	b, x := &b0, m0
 	_, _ = b, x
+	if b.AllowNulls != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_AllowNulls = *b.AllowNulls
+	}
 	return m0
 }
 
@@ -542,8 +577,10 @@ var File_mcpgw_v1_mcpgw_proto protoreflect.FileDescriptor
 
 const file_mcpgw_v1_mcpgw_proto_rawDesc = "" +
 	"\n" +
-	"\x14mcpgw/v1/mcpgw.proto\x12\bmcpgw.v1\x1a google/protobuf/descriptor.proto\x1a!google/protobuf/go_features.proto\"\x10\n" +
-	"\x0eMessageOptions\"L\n" +
+	"\x14mcpgw/v1/mcpgw.proto\x12\bmcpgw.v1\x1a google/protobuf/descriptor.proto\x1a!google/protobuf/go_features.proto\"1\n" +
+	"\x0eMessageOptions\x12\x1f\n" +
+	"\vallow_nulls\x18\x01 \x01(\bR\n" +
+	"allowNulls\"L\n" +
 	"\fFieldOptions\x12 \n" +
 	"\vdescription\x18\x01 \x01(\tR\vdescription\x12\x1a\n" +
 	"\brequired\x18\x02 \x01(\bR\brequired\"\xe9\x01\n" +

@@ -26,7 +26,12 @@ extend google.protobuf.MessageOptions {
   MessageOptions message = 8653;
 }
 
-message MessageOptions {}
+message MessageOptions {
+  // When true, generated JSON Schemas for this message allow explicit null values
+  // for fields with presence (including scalars with presence and nested messages),
+  // and treat repeated fields as nullable arrays. Default is false (no nulls).
+  bool allow_nulls = 1;
+}
 
 message FieldOptions {
   string description = 1;

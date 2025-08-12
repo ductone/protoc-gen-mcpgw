@@ -30,11 +30,17 @@ func TestCreateGenreRequestSchema(t *testing.T) {
 	nameProperty, ok := properties["name"].(map[string]any)
 	assert.True(t, ok, "Name field should be present")
 
-	// In the actual schema, type is an array of strings
-	typeArray, ok := nameProperty["type"].([]string)
-	assert.True(t, ok, "Type should be a string array")
+	// Type may be a string or an array of strings depending on allow_nulls
+	var typeArray []string
+	switch v := nameProperty["type"].(type) {
+	case string:
+		typeArray = []string{v}
+	case []string:
+		typeArray = v
+	default:
+		t.Fatalf("unexpected type for 'type': %T", v)
+	}
 	assert.Contains(t, typeArray, "string")
-	assert.Contains(t, typeArray, "null")
 
 	// Check validation constraints - in the implementation they're uint64
 	assert.Equal(t, uint64(1), nameProperty["minLength"])
@@ -69,20 +75,41 @@ func TestGetBookRequestSchema(t *testing.T) {
 
 	// Check field types
 	shelfProp := properties["shelf"].(map[string]any)
-	typeArray, ok := shelfProp["type"].([]string)
-	assert.True(t, ok)
+	var typeArray []string
+	switch v := shelfProp["type"].(type) {
+	case string:
+		typeArray = []string{v}
+	case []string:
+		typeArray = v
+	default:
+		t.Fatalf("unexpected type for 'type': %T", v)
+	}
 	assert.Contains(t, typeArray, "string")
 
 	bookProp := properties["book"].(map[string]any)
 	// Int64 type should include a pattern for string representation
 	assert.Contains(t, bookProp, "pattern")
-	typeArray, ok = bookProp["type"].([]string)
-	assert.True(t, ok)
+	typeArray = nil
+	switch v := bookProp["type"].(type) {
+	case string:
+		typeArray = []string{v}
+	case []string:
+		typeArray = v
+	default:
+		t.Fatalf("unexpected type for 'type': %T", v)
+	}
 	assert.Contains(t, typeArray, "string") // int64 is represented as a string in JSON
 
 	includeProp := properties["includeAuthor"].(map[string]any)
-	typeArray, ok = includeProp["type"].([]string)
-	assert.True(t, ok)
+	typeArray = nil
+	switch v := includeProp["type"].(type) {
+	case string:
+		typeArray = []string{v}
+	case []string:
+		typeArray = v
+	default:
+		t.Fatalf("unexpected type for 'type': %T", v)
+	}
 	assert.Contains(t, typeArray, "boolean")
 
 	// Pretty print the schema for debugging
@@ -110,11 +137,17 @@ func TestCreateBookRequestSchema(t *testing.T) {
 	assert.Contains(t, properties, "book")
 	bookProp := properties["book"].(map[string]any)
 
-	// In the actual schema, type is an array of strings
-	typeArray, ok := bookProp["type"].([]string)
-	assert.True(t, ok, "Type should be a string array")
+	// Type may be string or array depending on allow_nulls
+	var typeArray []string
+	switch v := bookProp["type"].(type) {
+	case string:
+		typeArray = []string{v}
+	case []string:
+		typeArray = v
+	default:
+		t.Fatalf("unexpected type for 'type': %T", v)
+	}
 	assert.Contains(t, typeArray, "object")
-	assert.Contains(t, typeArray, "null")
 
 	// Check that the nested book has its own properties
 	bookProperties, ok := bookProp["properties"].(map[string]any)
@@ -206,10 +239,16 @@ func TestGetAuthorResponseSchema(t *testing.T) {
 
 	// Check the type of the fiction field
 	fictionProp := properties["fiction"].(map[string]any)
-	typeArray, ok := fictionProp["type"].([]string)
-	assert.True(t, ok, "Type should be a string array")
+	var typeArray []string
+	switch v := fictionProp["type"].(type) {
+	case string:
+		typeArray = []string{v}
+	case []string:
+		typeArray = v
+	default:
+		t.Fatalf("unexpected type for 'type': %T", v)
+	}
 	assert.Contains(t, typeArray, "boolean")
-	assert.Contains(t, typeArray, "null") // Nullable since it's part of a oneof
 
 	// Pretty print the schema for debugging
 	jsonBytes, _ := json.MarshalIndent(schema, "", "  ")
