@@ -30,6 +30,7 @@ message MessageOptions {}
 
 message FieldOptions {
   string description = 1;
+  bool required = 2;
 }
 
 message MethodOptions {
