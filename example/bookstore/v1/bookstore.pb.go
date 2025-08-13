@@ -3260,10 +3260,10 @@ var File_bookstore_v1_bookstore_proto protoreflect.FileDescriptor
 
 const file_bookstore_v1_bookstore_proto_rawDesc = "" +
 	"\n" +
-	"\x1cbookstore/v1/bookstore.proto\x12\fbookstore.v1\x1a\x1bbuf/validate/validate.proto\x1a\x19google/protobuf/any.proto\x1a google/protobuf/field_mask.proto\x1a!google/protobuf/go_features.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcpgw/v1/mcpgw.proto\"N\n" +
-	"\x12CreateGenreRequest\x128\n" +
-	"\x04name\x18\x01 \x01(\tB$\xbaH\x06r\x04\x10\x01\x182\xe2\x9c\x04\x17\n" +
-	"\x15The name of the genreR\x04name\"@\n" +
+	"\x1cbookstore/v1/bookstore.proto\x12\fbookstore.v1\x1a\x1bbuf/validate/validate.proto\x1a\x19google/protobuf/any.proto\x1a google/protobuf/field_mask.proto\x1a!google/protobuf/go_features.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcpgw/v1/mcpgw.proto\"X\n" +
+	"\x12CreateGenreRequest\x12:\n" +
+	"\x04name\x18\x01 \x01(\tB&\xbaH\x06r\x04\x10\x01\x182\xe2\x9c\x04\x19\n" +
+	"\x15The name of the genre\x10\x01R\x04name:\x06\xea\x9c\x04\x02\b\x01\"@\n" +
 	"\x13CreateGenreResponse\x12)\n" +
 	"\x05genre\x18\x01 \x01(\v2\x13.bookstore.v1.GenreR\x05genre\",\n" +
 	"\x0fGetGenreRequest\x12\x19\n" +
@@ -3286,13 +3286,13 @@ const file_bookstore_v1_bookstore_proto_rawDesc = "" +
 	"\x0fGetBookResponse\x12&\n" +
 	"\x04book\x18\x01 \x01(\v2\x12.bookstore.v1.BookR\x04book\"<\n" +
 	"\x12UpdateBookResponse\x12&\n" +
-	"\x04book\x18\x01 \x01(\v2\x12.bookstore.v1.BookR\x04book\"\x88\x01\n" +
+	"\x04book\x18\x01 \x01(\v2\x12.bookstore.v1.BookR\x04book\"\x90\x01\n" +
 	"\x11GetAuthorResponse\x12,\n" +
 	"\x06author\x18\x01 \x01(\v2\x14.bookstore.v1.AuthorR\x06author\x12\x1a\n" +
 	"\afiction\x18\x02 \x01(\bH\x00R\afiction\x12 \n" +
 	"\n" +
 	"nonfiction\x18\x03 \x01(\bH\x00R\n" +
-	"nonfictionB\a\n" +
+	"nonfiction:\x06\xea\x9c\x04\x02\b\x01B\a\n" +
 	"\x05genre\"\x83\x01\n" +
 	"\x05Shelf\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
@@ -3332,17 +3332,17 @@ const file_bookstore_v1_bookstore_proto_rawDesc = "" +
 	"\x12DeleteShelfRequest\x12\x14\n" +
 	"\x05shelf\x18\x01 \x01(\tR\x05shelf\"(\n" +
 	"\x10ListBooksRequest\x12\x14\n" +
-	"\x05shelf\x18\x01 \x01(\tR\x05shelf\"Q\n" +
+	"\x05shelf\x18\x01 \x01(\tR\x05shelf\"Y\n" +
 	"\x11CreateBookRequest\x12\x14\n" +
 	"\x05shelf\x18\x01 \x01(\tR\x05shelf\x12&\n" +
-	"\x04book\x18\x02 \x01(\v2\x12.bookstore.v1.BookR\x04book\"\x9d\x01\n" +
+	"\x04book\x18\x02 \x01(\v2\x12.bookstore.v1.BookR\x04book:\x06\xea\x9c\x04\x02\b\x01\"\xa5\x01\n" +
 	"\x0eGetBookRequest\x12\x14\n" +
 	"\x05shelf\x18\x01 \x01(\tR\x05shelf\x12\x12\n" +
 	"\x04book\x18\x02 \x01(\x03R\x04book\x12%\n" +
 	"\x0einclude_author\x18\x03 \x01(\bR\rincludeAuthor\x12\x1b\n" +
 	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\x12\x1d\n" +
 	"\n" +
-	"page_token\x18\x05 \x01(\tR\tpageToken\"Q\n" +
+	"page_token\x18\x05 \x01(\tR\tpageToken:\x06\xea\x9c\x04\x02\b\x01\"Q\n" +
 	"\x11UpdateBookRequest\x12\x14\n" +
 	"\x05shelf\x18\x01 \x01(\tR\x05shelf\x12&\n" +
 	"\x04book\x18\x02 \x01(\v2\x12.bookstore.v1.BookR\x04book\";\n" +

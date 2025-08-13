@@ -128,8 +128,12 @@ service BookstoreService {
 }
 
 message CreateGenreRequest {
+  option (mcpgw.v1.message) = {allow_nulls: true};
   string name = 1 [
-    (mcpgw.v1.field) = {description: "The name of the genre"},
+    (mcpgw.v1.field) = {
+      description: "The name of the genre"
+      required: true
+    },
     (buf.validate.field).string.min_len = 1,
     (buf.validate.field).string.max_len = 50
   ];
@@ -182,6 +186,7 @@ message UpdateBookResponse {
 }
 
 message GetAuthorResponse {
+  option (mcpgw.v1.message) = {allow_nulls: true};
   Author author = 1;
 
   oneof genre {
@@ -275,6 +280,7 @@ message ListBooksRequest {
 
 // Request message for CreateBook method.
 message CreateBookRequest {
+  option (mcpgw.v1.message) = {allow_nulls: true};
   // The ID of the shelf on which to create a book.
   string shelf = 1;
   // A book resource to create on the shelf.
@@ -283,6 +289,7 @@ message CreateBookRequest {
 
 // Request message for GetBook method.
 message GetBookRequest {
+  option (mcpgw.v1.message) = {allow_nulls: true};
   // The ID of the shelf from which to retrieve a book.
   string shelf = 1;
   // The ID of the book to retrieve.
