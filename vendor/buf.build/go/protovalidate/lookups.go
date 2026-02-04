@@ -1,4 +1,4 @@
-// Copyright 2023-2024 Buf Technologies, Inc.
+// Copyright 2023-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -60,6 +60,7 @@ var expectedStandardRules = map[protoreflect.Kind]protoreflect.FieldDescriptor{
 var expectedWKTRules = map[protoreflect.FullName]protoreflect.FieldDescriptor{
 	"google.protobuf.Any":       fieldRulesDesc.Fields().ByName("any"),
 	"google.protobuf.Duration":  fieldRulesDesc.Fields().ByName("duration"),
+	"google.protobuf.FieldMask": fieldRulesDesc.Fields().ByName("field_mask"),
 	"google.protobuf.Timestamp": fieldRulesDesc.Fields().ByName("timestamp"),
 }
 

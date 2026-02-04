@@ -6,17 +6,19 @@ SHELL := bash
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-print-directory
-BIN := .tmp/bin
-COPYRIGHT_YEARS := 2023-2024
+TMP := .tmp
+BIN := $(TMP)/bin
+BENCH_TMP := $(TMP)/bench
+COPYRIGHT_YEARS := 2023-2025
 LICENSE_IGNORE := -e internal/testdata/
 # Set to use a different compiler. For example, `GO=go1.18rc1 make test`.
 GO ?= go
 ARGS ?= --strict_message --strict_error
-GOLANGCI_LINT_VERSION ?= v2.1.2
+GOLANGCI_LINT_VERSION ?= v2.4.0
 # Set to use a different version of protovalidate-conformance.
 # Should be kept in sync with the version referenced in buf.yaml and
 # 'buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go' in go.mod.
-CONFORMANCE_VERSION ?= v0.13.3
+CONFORMANCE_VERSION ?= v1.1.0
 
 .PHONY: help
 help: ## Describe useful make targets
@@ -33,6 +35,10 @@ clean: ## Delete intermediate build artifacts
 .PHONY: test
 test: ## Run all unit tests
 	$(GO) test -race -cover ./...
+
+.PHONY: test-opaque
+test-opaque: ## Test proto opaque API support
+	$(GO) test --tags=protoopaque ./...
 
 .PHONY: lint
 lint: lint-proto lint-go  ## Lint code and protos
@@ -54,6 +60,10 @@ lint-fix:
 .PHONY: conformance
 conformance: $(BIN)/protovalidate-conformance protovalidate-conformance-go ## Run conformance tests
 	$(BIN)/protovalidate-conformance $(ARGS) $(BIN)/protovalidate-conformance-go --expected_failures=conformance/expected_failures.yaml
+
+.PHONY: conformance-hyperpb
+conformance-hyperpb: ## Run conformance tests against hyperpb
+	HYPERPB=true $(MAKE) conformance
 
 .PHONY: generate
 generate: generate-proto generate-license ## Regenerate code and license headers
@@ -86,9 +96,25 @@ checkgenerate: generate
 	@# Used in CI to verify that `make generate` doesn't produce a diff.
 	test -z "$$(git status --porcelain | tee /dev/stderr)"
 
+
+BENCH ?= .
+BENCH_COUNT ?= 10
+BENCH_NAME ?= $(shell date +%F:%T)
+.PHONY: bench
+bench: $(BENCH_TMP)
+	go test -bench="$(BENCH)" -benchmem \
+		-memprofile "$(BENCH_TMP)/$(BENCH_NAME).mem.profile" \
+		-cpuprofile "$(BENCH_TMP)/$(BENCH_NAME).cpu.profile" \
+		-count $(BENCH_COUNT) \
+		| tee "$(BENCH_TMP)/$(BENCH_NAME).bench.txt"
+
+
 .PHONY: upgrade-go
 upgrade-go:
 	$(GO) get -u -t ./... && $(GO) mod tidy -v
+
+$(BENCH_TMP):
+	@mkdir -p $(BENCH_TMP)
 
 $(BIN):
 	@mkdir -p $(BIN)

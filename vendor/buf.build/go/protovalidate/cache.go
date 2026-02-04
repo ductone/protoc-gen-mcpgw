@@ -1,4 +1,4 @@
-// Copyright 2023-2024 Buf Technologies, Inc.
+// Copyright 2023-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -88,7 +88,7 @@ func (c *cache) Build(
 				return false
 			}
 		}
-		precomputedASTs, compileErr = precomputedASTs.WithRuleValue(rule, desc)
+		precomputedASTs, compileErr = precomputedASTs.WithRuleValues(rules, rule, desc)
 		if compileErr != nil {
 			err = compileErr
 			return false
@@ -100,8 +100,7 @@ func (c *cache) Build(
 		return nil, err
 	}
 
-	rulesGlobal := cel.Globals(&variable{Name: "rules", Val: rules.Interface()})
-	set, err = asts.ReduceResiduals(rulesGlobal)
+	set, err = asts.ReduceResiduals(rules)
 	return set, err
 }
 

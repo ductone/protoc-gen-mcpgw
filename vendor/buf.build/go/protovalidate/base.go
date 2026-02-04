@@ -1,4 +1,4 @@
-// Copyright 2023-2024 Buf Technologies, Inc.
+// Copyright 2023-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -49,11 +49,11 @@ func (b *base) fieldPath() *validate.FieldPath {
 	if b.FieldPathElement == nil {
 		return nil
 	}
-	return &validate.FieldPath{
+	return validate.FieldPath_builder{
 		Elements: []*validate.FieldPathElement{
 			b.FieldPathElement,
 		},
-	}
+	}.Build()
 }
 
 func (b *base) rulePath(suffix *validate.FieldPath) *validate.FieldPath {
@@ -62,9 +62,9 @@ func (b *base) rulePath(suffix *validate.FieldPath) *validate.FieldPath {
 
 func prefixRulePath(prefix *validate.FieldPath, suffix *validate.FieldPath) *validate.FieldPath {
 	if len(prefix.GetElements()) > 0 {
-		return &validate.FieldPath{
+		return validate.FieldPath_builder{
 			Elements: slices.Concat(prefix.GetElements(), suffix.GetElements()),
-		}
+		}.Build()
 	}
 	return suffix
 }
