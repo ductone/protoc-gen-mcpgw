@@ -5,6 +5,8 @@ linters:
     - cyclop            # covered by gocyclo
     - depguard          # we can manage dependencies strictly if the need arises in the future
     - err113            # internal error causes may be dynamic
+    - embeddedstructfieldcheck # over-generous whitespace violates house style
+    - exhaustive        # don't _always_ need to exhaustively test all enum values
     - exhaustruct       # don't _always_ need to exhaustively create struct
     - funcorder         # consider enabling in the future
     - funlen            # rely on code review to limit function length
@@ -16,10 +18,13 @@ linters:
     - maintidx          # covered by gocyclo
     - mnd               # some unnamed constants are okay
     - nlreturn          # generous whitespace violates house style
+    - noinlineerr       # inline is fine
     - nonamedreturns    # usage of named returns should be selective
     - testpackage       # internal tests are fine
+    - thelper           # overzealous breaking of stack traces
     - wrapcheck         # don't _always_ need to wrap errors
     - wsl               # over-generous whitespace violates house style
+    - wsl_v5            # over-generous whitespace violates house style
   settings:
     errcheck:
       check-type-assertions: true

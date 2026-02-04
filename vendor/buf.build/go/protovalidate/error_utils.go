@@ -1,4 +1,4 @@
-// Copyright 2023-2024 Buf Technologies, Inc.
+// Copyright 2023-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -55,18 +55,23 @@ func mergeViolations(dst, src error, cfg *validationConfig) (ok bool, err error)
 	return !(cfg.failFast && len(dstValErrs.Violations) > 0), dst
 }
 
-// fieldPathElement returns a buf.validate.fieldPathElement that corresponds to
+// fieldPathElement returns a buf.validate.FieldPathElement that corresponds to
 // a provided FieldDescriptor. If the provided FieldDescriptor is nil, nil is
 // returned.
 func fieldPathElement(field protoreflect.FieldDescriptor) *validate.FieldPathElement {
 	if field == nil {
 		return nil
 	}
-	return &validate.FieldPathElement{
+	element := validate.FieldPathElement_builder{
 		FieldNumber: proto.Int32(int32(field.Number())),
-		FieldName:   proto.String(field.TextName()),
 		FieldType:   descriptorpb.FieldDescriptorProto_Type(field.Kind()).Enum(),
 	}
+	if field.IsExtension() {
+		element.FieldName = proto.String(field.TextName())
+	} else {
+		element.FieldName = proto.String(string(field.Name()))
+	}
+	return element.Build()
 }
 
 // fieldPath returns a single-element buf.validate.fieldPath corresponding to
@@ -75,11 +80,11 @@ func fieldPath(field protoreflect.FieldDescriptor) *validate.FieldPath {
 	if field == nil {
 		return nil
 	}
-	return &validate.FieldPath{
+	return validate.FieldPath_builder{
 		Elements: []*validate.FieldPathElement{
 			fieldPathElement(field),
 		},
-	}
+	}.Build()
 }
 
 // updateViolationPaths modifies the field and rule paths of an error, appending
@@ -91,7 +96,7 @@ func fieldPath(field protoreflect.FieldDescriptor) *validate.FieldPath {
 // path is reversed. Rule paths are generally static, so this optimization isn't
 // applied for rule paths.
 func updateViolationPaths(err error, fieldSuffix *validate.FieldPathElement, rulePrefix []*validate.FieldPathElement) {
-	if fieldSuffix == nil && len(rulePrefix) == 0 {
+	if err == nil || (fieldSuffix == nil && len(rulePrefix) == 0) {
 		return
 	}
 	var valErr *ValidationError
@@ -99,12 +104,16 @@ func updateViolationPaths(err error, fieldSuffix *validate.FieldPathElement, rul
 		for _, violation := range valErr.Violations {
 			if fieldSuffix != nil {
 				if violation.Proto.GetField() == nil {
-					violation.Proto.Field = &validate.FieldPath{}
+					violation.Proto.SetField(&validate.FieldPath{})
 				}
-				violation.Proto.Field.Elements = append(violation.Proto.Field.Elements, fieldSuffix)
+				violation.Proto.GetField().SetElements(
+					append(violation.Proto.GetField().GetElements(), fieldSuffix),
+				)
 			}
 			if len(rulePrefix) != 0 {
-				violation.Proto.Rule.Elements = slices.Concat(rulePrefix, violation.Proto.GetRule().GetElements())
+				violation.Proto.GetRule().SetElements(
+					slices.Concat(rulePrefix, violation.Proto.GetRule().GetElements()),
+				)
 			}
 		}
 	}
@@ -113,6 +122,9 @@ func updateViolationPaths(err error, fieldSuffix *validate.FieldPathElement, rul
 // finalizeViolationPaths reverses all field paths in the error and populates
 // the deprecated string-based field path.
 func finalizeViolationPaths(err error) {
+	if err == nil {
+		return
+	}
 	var valErr *ValidationError
 	if errors.As(err, &valErr) {
 		for _, violation := range valErr.Violations {
@@ -132,22 +144,22 @@ func FieldPathString(path *validate.FieldPath) string {
 			result.WriteByte('.')
 		}
 		result.WriteString(element.GetFieldName())
-		subscript := element.GetSubscript()
-		if subscript == nil {
+		subscript := element.WhichSubscript()
+		if subscript == validate.FieldPathElement_Subscript_not_set_case {
 			continue
 		}
 		result.WriteByte('[')
-		switch value := subscript.(type) {
-		case *validate.FieldPathElement_Index:
-			result.WriteString(strconv.FormatUint(value.Index, 10))
-		case *validate.FieldPathElement_BoolKey:
-			result.WriteString(strconv.FormatBool(value.BoolKey))
-		case *validate.FieldPathElement_IntKey:
-			result.WriteString(strconv.FormatInt(value.IntKey, 10))
-		case *validate.FieldPathElement_UintKey:
-			result.WriteString(strconv.FormatUint(value.UintKey, 10))
-		case *validate.FieldPathElement_StringKey:
-			result.WriteString(strconv.Quote(value.StringKey))
+		switch subscript {
+		case validate.FieldPathElement_Index_case:
+			result.WriteString(strconv.FormatUint(element.GetIndex(), 10))
+		case validate.FieldPathElement_BoolKey_case:
+			result.WriteString(strconv.FormatBool(element.GetBoolKey()))
+		case validate.FieldPathElement_IntKey_case:
+			result.WriteString(strconv.FormatInt(element.GetIntKey(), 10))
+		case validate.FieldPathElement_UintKey_case:
+			result.WriteString(strconv.FormatUint(element.GetUintKey(), 10))
+		case validate.FieldPathElement_StringKey_case:
+			result.WriteString(strconv.Quote(element.GetStringKey()))
 		}
 		result.WriteByte(']')
 	}
@@ -157,10 +169,13 @@ func FieldPathString(path *validate.FieldPath) string {
 // markViolationForKey marks the provided error as being for a map key, by
 // setting the `for_key` flag on each violation within the validation error.
 func markViolationForKey(err error) {
+	if err == nil {
+		return
+	}
 	var valErr *ValidationError
 	if errors.As(err, &valErr) {
 		for _, violation := range valErr.Violations {
-			violation.Proto.ForKey = proto.Bool(true)
+			violation.Proto.SetForKey(true)
 		}
 	}
 }

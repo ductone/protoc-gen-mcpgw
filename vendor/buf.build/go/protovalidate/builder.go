@@ -1,4 +1,4 @@
-// Copyright 2023-2024 Buf Technologies, Inc.
+// Copyright 2023-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,8 +32,10 @@ import (
 
 //nolint:gochecknoglobals
 var (
-	celRuleDescriptor = (&validate.FieldRules{}).ProtoReflect().Descriptor().Fields().ByName("cel")
-	celRuleField      = fieldPathElement(celRuleDescriptor)
+	celExpressionDescriptor = (&validate.FieldRules{}).ProtoReflect().Descriptor().Fields().ByName("cel_expression")
+	celExpressionField      = fieldPathElement(celExpressionDescriptor)
+	celRuleDescriptor       = (&validate.FieldRules{}).ProtoReflect().Descriptor().Fields().ByName("cel")
+	celRuleField            = fieldPathElement(celRuleDescriptor)
 )
 
 // builder is a build-through cache of message evaluators keyed off the provided
@@ -124,9 +126,6 @@ func (bldr *builder) buildMessage(
 	cache messageCache,
 ) {
 	msgRules, _ := ResolveMessageRules(desc)
-	if msgRules.GetDisabled() {
-		return
-	}
 
 	steps := []func(
 		desc protoreflect.MessageDescriptor,
@@ -152,7 +151,7 @@ func (bldr *builder) processMessageExpressions(
 	_ messageCache,
 ) {
 	exprs := expressions{
-		Rules: msgRules.GetCel(),
+		Rules: append(expressionsToRules(msgRules.GetCelExpression()), msgRules.GetCel()...),
 	}
 	compiledExprs, err := compile(
 		exprs,
@@ -254,12 +253,9 @@ func (bldr *builder) buildField(
 	msgRules *validate.MessageRules,
 	cache messageCache,
 ) (field, error) {
-	if !fieldRules.HasIgnore() && isPartOfMessageOneof(msgRules, fieldDescriptor) {
+	if fieldRules != nil && !fieldRules.HasIgnore() && isPartOfMessageOneof(msgRules, fieldDescriptor) {
 		fieldRules = proto.CloneOf(fieldRules)
-		if fieldRules == nil {
-			fieldRules = &validate.FieldRules{}
-		}
-		fieldRules.SetIgnore(validate.Ignore_IGNORE_IF_UNPOPULATED)
+		fieldRules.SetIgnore(validate.Ignore_IGNORE_IF_ZERO_VALUE)
 	}
 	fld := field{
 		Value: value{
@@ -268,9 +264,6 @@ func (bldr *builder) buildField(
 		HasPresence: fieldDescriptor.HasPresence(),
 		Required:    fieldRules.GetRequired(),
 		Ignore:      fieldRules.GetIgnore(),
-	}
-	if fld.shouldIgnoreDefault() {
-		fld.Zero = bldr.zeroValue(fieldDescriptor, false)
 	}
 	err := bldr.buildValue(fieldDescriptor, fieldRules, &fld.Value, cache)
 	return fld, err
@@ -332,32 +325,50 @@ func (bldr *builder) processFieldExpressions(
 	eval *value,
 	_ messageCache,
 ) error {
-	exprs := expressions{
-		Rules: fieldRules.GetCel(),
-	}
-
 	celTyp := pvcel.ProtoFieldToType(fieldDesc, false, eval.NestedRule != nil)
 	opts := append(
 		pvcel.RequiredEnvOptions(fieldDesc),
 		cel.Variable("this", celTyp),
 	)
-	compiledExpressions, err := compile(exprs, bldr.env, opts...)
+	compileWithPath := func(exprs expressions, fieldPathElement *validate.FieldPathElement, descriptor protoreflect.FieldDescriptor) (programSet, error) {
+		compiledExpressions, err := compile(exprs, bldr.env, opts...)
+		if err != nil {
+			return nil, err
+		}
+		for i := range compiledExpressions {
+			compiledExpressions[i].Path = []*validate.FieldPathElement{
+				validate.FieldPathElement_builder{
+					FieldNumber: proto.Int32(fieldPathElement.GetFieldNumber()),
+					FieldType:   fieldPathElement.GetFieldType().Enum(),
+					FieldName:   proto.String(fieldPathElement.GetFieldName()),
+					Index:       proto.Uint64(uint64(i)), //nolint:gosec // indices are guaranteed to be non-negative
+				}.Build(),
+			}
+			compiledExpressions[i].Descriptor = descriptor
+		}
+		return compiledExpressions, nil
+	}
+	compiledExpressions, err := compileWithPath(
+		expressions{
+			Rules: expressionsToRules(fieldRules.GetCelExpression()),
+		},
+		celExpressionField,
+		celExpressionDescriptor,
+	)
 	if err != nil {
 		return err
 	}
-	for i := range compiledExpressions {
-		compiledExpressions[i].Path = []*validate.FieldPathElement{
-			{
-				FieldNumber: proto.Int32(celRuleField.GetFieldNumber()),
-				FieldType:   celRuleField.GetFieldType().Enum(),
-				FieldName:   proto.String(celRuleField.GetFieldName()),
-				Subscript: &validate.FieldPathElement_Index{
-					Index: uint64(i), //nolint:gosec // indices are guaranteed to be non-negative
-				},
-			},
-		}
-		compiledExpressions[i].Descriptor = celRuleDescriptor
+	celRuleCompiledExpressions, err := compileWithPath(
+		expressions{
+			Rules: fieldRules.GetCel(),
+		},
+		celRuleField,
+		celRuleDescriptor,
+	)
+	if err != nil {
+		return err
 	}
+	compiledExpressions = append(compiledExpressions, celRuleCompiledExpressions...)
 	if len(compiledExpressions) > 0 {
 		eval.Rules = append(eval.Rules,
 			celPrograms{
@@ -580,8 +591,7 @@ func (bldr *builder) shouldIgnoreAlways(rules *validate.FieldRules) bool {
 }
 
 func (bldr *builder) shouldIgnoreEmpty(rules *validate.FieldRules) bool {
-	return rules.GetIgnore() == validate.Ignore_IGNORE_IF_UNPOPULATED ||
-		rules.GetIgnore() == validate.Ignore_IGNORE_IF_DEFAULT_VALUE
+	return rules.GetIgnore() == validate.Ignore_IGNORE_IF_ZERO_VALUE
 }
 
 func (bldr *builder) zeroValue(fdesc protoreflect.FieldDescriptor, forItems bool) protoreflect.Value {
@@ -624,4 +634,15 @@ func isPartOfMessageOneof(msgRules *validate.MessageRules, field protoreflect.Fi
 	return slices.ContainsFunc(msgRules.GetOneof(), func(oneof *validate.MessageOneofRule) bool {
 		return slices.Contains(oneof.GetFields(), string(field.Name()))
 	})
+}
+
+func expressionsToRules(expressions []string) []*validate.Rule {
+	rules := make([]*validate.Rule, 0, len(expressions))
+	for _, expr := range expressions {
+		rules = append(rules, validate.Rule_builder{
+			Id:         proto.String(expr),
+			Expression: proto.String(expr),
+		}.Build())
+	}
+	return rules
 }

@@ -1,4 +1,4 @@
-// Copyright 2023-2024 Buf Technologies, Inc.
+// Copyright 2023-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,9 +19,7 @@ import (
 	"slices"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
-	pvcel "buf.build/go/protovalidate/cel"
 	"github.com/google/cel-go/cel"
-	"github.com/google/cel-go/interpreter"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -41,7 +39,7 @@ func (set astSet) Merge(other astSet) astSet {
 // either a true or empty string constant result, no compiledProgram is
 // generated for it. The main usage of this is to elide tautological expressions
 // from the final result.
-func (set astSet) ReduceResiduals(opts ...cel.ProgramOption) (programSet, error) {
+func (set astSet) ReduceResiduals(rules protoreflect.Message, opts ...cel.ProgramOption) (programSet, error) {
 	residuals := make(astSet, 0, len(set))
 	options := append([]cel.ProgramOption{
 		cel.EvalOptions(
@@ -52,17 +50,26 @@ func (set astSet) ReduceResiduals(opts ...cel.ProgramOption) (programSet, error)
 		),
 	}, opts...)
 
+	baseActivation := &variable{
+		Name: "rules",
+		Val:  rules.Interface(),
+	}
+
 	for _, ast := range set {
-		options := slices.Clone(options)
+		activation := baseActivation
 		if ast.Value.IsValid() {
-			options = append(options, cel.Globals(&variable{Name: "rule", Val: ast.Value.Interface()}))
+			activation = &variable{
+				Name: "rule",
+				Val:  ast.Value.Interface(),
+				Next: activation,
+			}
 		}
 		program, err := ast.toProgram(ast.Env, options...)
 		if err != nil {
 			residuals = append(residuals, ast)
 			continue
 		}
-		val, details, _ := program.Program.Eval(interpreter.EmptyActivation())
+		val, details, _ := program.Program.Eval(activation)
 		if val != nil {
 			switch value := val.Value().(type) {
 			case bool:
@@ -82,6 +89,7 @@ func (set astSet) ReduceResiduals(opts ...cel.ProgramOption) (programSet, error)
 			residuals = append(residuals, compiledAST{
 				AST:        residual,
 				Env:        ast.Env,
+				Rules:      ast.Rules,
 				Source:     ast.Source,
 				Path:       ast.Path,
 				Value:      ast.Value,
@@ -108,23 +116,15 @@ func (set astSet) ToProgramSet(opts ...cel.ProgramOption) (out programSet, err e
 	return out, nil
 }
 
-// SetRuleValue sets the rule value for the programs in the ASTSet.
-func (set astSet) WithRuleValue(
+// SetRuleValue sets the rule and rules value for the programs in the ASTSet.
+func (set astSet) WithRuleValues(
+	rules protoreflect.Message,
 	ruleValue protoreflect.Value,
 	ruleDescriptor protoreflect.FieldDescriptor,
 ) (out astSet, err error) {
 	out = slices.Clone(set)
 	for i := range set {
-		out[i].Env, err = out[i].Env.Extend(
-			cel.Constant(
-				"rule",
-				pvcel.ProtoFieldToType(ruleDescriptor, true, false),
-				pvcel.ProtoFieldToValue(ruleDescriptor, ruleValue, false),
-			),
-		)
-		if err != nil {
-			return nil, err
-		}
+		out[i].Rules = rules
 		out[i].Value = ruleValue
 		out[i].Descriptor = ruleDescriptor
 	}
@@ -134,6 +134,7 @@ func (set astSet) WithRuleValue(
 type compiledAST struct {
 	AST        *cel.Ast
 	Env        *cel.Env
+	Rules      protoreflect.Message
 	Source     *validate.Rule
 	Path       []*validate.FieldPathElement
 	Value      protoreflect.Value
@@ -147,6 +148,7 @@ func (ast compiledAST) toProgram(env *cel.Env, opts ...cel.ProgramOption) (out c
 	}
 	return compiledProgram{
 		Program:    prog,
+		Rules:      ast.Rules,
 		Source:     ast.Source,
 		Path:       ast.Path,
 		Value:      ast.Value,

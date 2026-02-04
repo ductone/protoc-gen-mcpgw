@@ -1,4 +1,4 @@
-// Copyright 2023-2024 Buf Technologies, Inc.
+// Copyright 2023-2025 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -100,6 +100,7 @@ func (s programSet) bindThis(val any) *variable {
 // source Expression.
 type compiledProgram struct {
 	Program    cel.Program
+	Rules      protoreflect.Message
 	Source     *validate.Rule
 	Path       []*validate.FieldPathElement
 	Value      protoreflect.Value
@@ -110,7 +111,11 @@ type compiledProgram struct {
 func (expr compiledProgram) eval(bindings *variable, cfg *validationConfig) (*Violation, error) {
 	now := globalNowPool.Get(cfg.nowFn)
 	defer globalNowPool.Put(now)
-	bindings.Next = now
+	bindings.Next = &variable{
+		Next: now,
+		Name: "rules",
+		Val:  expr.Rules,
+	}
 
 	value, _, err := expr.Program.Eval(bindings)
 	if err != nil {
@@ -123,11 +128,11 @@ func (expr compiledProgram) eval(bindings *variable, cfg *validationConfig) (*Vi
 			return nil, nil
 		}
 		return &Violation{
-			Proto: &validate.Violation{
+			Proto: validate.Violation_builder{
 				Rule:    expr.rulePath(),
 				RuleId:  proto.String(expr.Source.GetId()),
 				Message: proto.String(val),
-			},
+			}.Build(),
 			RuleValue:      expr.Value,
 			RuleDescriptor: expr.Descriptor,
 		}, nil
@@ -135,12 +140,16 @@ func (expr compiledProgram) eval(bindings *variable, cfg *validationConfig) (*Vi
 		if val {
 			return nil, nil
 		}
+		message := expr.Source.GetMessage()
+		if message == "" {
+			message = fmt.Sprintf("%q returned false", expr.Source.GetExpression())
+		}
 		return &Violation{
-			Proto: &validate.Violation{
+			Proto: validate.Violation_builder{
 				Rule:    expr.rulePath(),
 				RuleId:  proto.String(expr.Source.GetId()),
-				Message: proto.String(expr.Source.GetMessage()),
-			},
+				Message: proto.String(message),
+			}.Build(),
 			RuleValue:      expr.Value,
 			RuleDescriptor: expr.Descriptor,
 		}, nil
@@ -152,7 +161,7 @@ func (expr compiledProgram) eval(bindings *variable, cfg *validationConfig) (*Vi
 
 func (expr compiledProgram) rulePath() *validate.FieldPath {
 	if len(expr.Path) > 0 {
-		return &validate.FieldPath{Elements: expr.Path}
+		return validate.FieldPath_builder{Elements: expr.Path}.Build()
 	}
 	return nil
 }
