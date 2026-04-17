@@ -73,18 +73,19 @@ func (m *Module) applyTemplate(ctx pgsgo.Context, w *bytes.Buffer, f pgs.File) (
 	bodyBuf := &bytes.Buffer{}
 
 	services := f.Services()
+	anyRendered := false
 	for _, service := range services {
-		sopt := getServiceOptions(service)
-		if sopt != nil && !sopt.GetEnabled() {
+		if !serviceEnabled(service) {
 			continue
 		}
 		err := m.renderService(ctx, bodyBuf, f, service, ix)
 		if err != nil {
 			return false, err
 		}
+		anyRendered = true
 	}
 
-	if len(services) == 0 {
+	if !anyRendered {
 		return false, nil
 	}
 
