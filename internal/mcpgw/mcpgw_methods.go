@@ -55,7 +55,7 @@ func (module *Module) methodContext(ctx pgsgo.Context, w io.Writer, f pgs.File, 
 	ix.Protojson = true
 	ix.GRPC = true
 
-	title, description, readOnly, destructive, idempotent, openWorld := mergeMethodMetadata(service, method, mext, aop)
+	title, description, readOnly, destructive, idempotent, openWorld := mergeMethodMetadata(mext, aop, deriveToolName(service, method), deriveDescription(method, aop))
 
 	rv := &methodTemplateContext{
 		MethodDesc: mcpgw_v1.MethodDesc{
@@ -91,39 +91,56 @@ func (module *Module) methodContext(ctx pgsgo.Context, w io.Writer, f pgs.File, 
 // fallbacks derived from (apigw.v1.method). Each field falls back to the
 // apigw-derived default when the mcpgw option does not set it explicitly.
 //
-// This lets a proto author override any individual field (e.g. a friendlier
-// tool title) while still auto-filling the rest.
-func mergeMethodMetadata(service pgs.Service, method pgs.Method, mext *mcpgw_v1.MethodOptions, aop *apigw_v1.Operation) (title, description string, readOnly, destructive, idempotent, openWorld bool) {
+// Explicit presence wins: a hint set to false in the mcpgw annotation
+// suppresses the verb-derived default (e.g. read_only_hint = false on a
+// GET endpoint). Only unset fields fall through to the apigw verb.
+//
+// derivedTitle and derivedDescription are precomputed so the merge logic
+// stays a pure function of the proto options — see deriveToolName /
+// deriveDescription for the pgs-dependent halves.
+func mergeMethodMetadata(mext *mcpgw_v1.MethodOptions, aop *apigw_v1.Operation, derivedTitle, derivedDescription string) (title, description string, readOnly, destructive, idempotent, openWorld bool) {
 	if mext != nil && mext.HasTitle() {
 		title = mext.GetTitle()
 	} else {
-		title = deriveToolName(service, method)
+		title = derivedTitle
 	}
 
 	if mext != nil && mext.HasDescription() {
 		description = mext.GetDescription()
 	} else {
-		description = deriveDescription(method, aop)
+		description = derivedDescription
 	}
 
-	if mext != nil {
-		readOnly = mext.GetReadOnlyHint()
-		destructive = mext.GetDestructiveHint()
-		idempotent = mext.GetIdempotentHint()
+	verb := ""
+	if aop != nil {
+		verb = aop.GetMethod()
+	}
+	readOnly = resolveHint(mext, (*mcpgw_v1.MethodOptions).HasReadOnlyHint, (*mcpgw_v1.MethodOptions).GetReadOnlyHint, verb, isReadOnlyVerb)
+	destructive = resolveHint(mext, (*mcpgw_v1.MethodOptions).HasDestructiveHint, (*mcpgw_v1.MethodOptions).GetDestructiveHint, verb, isDestructiveVerb)
+	idempotent = resolveHint(mext, (*mcpgw_v1.MethodOptions).HasIdempotentHint, (*mcpgw_v1.MethodOptions).GetIdempotentHint, verb, isIdempotentVerb)
+	if mext != nil && mext.HasOpenWorldHint() {
 		openWorld = mext.GetOpenWorldHint()
 	}
-	if aop != nil {
-		if !readOnly {
-			readOnly = isReadOnlyVerb(aop.GetMethod())
-		}
-		if !destructive {
-			destructive = isDestructiveVerb(aop.GetMethod())
-		}
-		if !idempotent {
-			idempotent = isIdempotentVerb(aop.GetMethod())
-		}
-	}
 	return
+}
+
+// resolveHint picks an explicit mcpgw bool when present, otherwise falls
+// back to deriving from the HTTP verb. An empty verb (no apigw annotation)
+// yields false.
+func resolveHint(
+	mext *mcpgw_v1.MethodOptions,
+	has func(*mcpgw_v1.MethodOptions) bool,
+	get func(*mcpgw_v1.MethodOptions) bool,
+	verb string,
+	derive func(string) bool,
+) bool {
+	if mext != nil && has(mext) {
+		return get(mext)
+	}
+	if verb == "" {
+		return false
+	}
+	return derive(verb)
 }
 
 // deriveToolName returns "{service}_{method}" in snake_case.
@@ -141,14 +158,21 @@ func deriveDescription(method pgs.Method, aop *apigw_v1.Operation) string {
 			return normalizeComment(c)
 		}
 	}
-	if aop != nil {
-		verb := strings.ToUpper(aop.GetMethod())
-		route := aop.GetRoute()
-		if verb != "" && route != "" {
-			return fmt.Sprintf("%s %s", verb, route)
-		}
+	return verbRouteFallback(aop)
+}
+
+// verbRouteFallback formats an apigw operation as "VERB /route", or
+// returns "" if either field is missing.
+func verbRouteFallback(aop *apigw_v1.Operation) string {
+	if aop == nil {
+		return ""
 	}
-	return ""
+	verb := strings.ToUpper(aop.GetMethod())
+	route := aop.GetRoute()
+	if verb == "" || route == "" {
+		return ""
+	}
+	return fmt.Sprintf("%s %s", verb, route)
 }
 
 // normalizeComment strips protoc's per-line leading space and joins the

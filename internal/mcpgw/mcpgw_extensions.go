@@ -8,8 +8,8 @@ import (
 
 func getServiceOptions(s pgs.Service) *mcpgw_v1.ServiceOptions {
 	sopt := &mcpgw_v1.ServiceOptions{}
-	_, err := s.Extension(mcpgw_v1.E_Service, sopt)
-	if err != nil {
+	ok, err := s.Extension(mcpgw_v1.E_Service, sopt)
+	if err != nil || !ok {
 		return nil
 	}
 	return sopt
@@ -64,8 +64,8 @@ func serviceEnabled(s pgs.Service) bool {
 
 func getMessageOptions(m pgs.Message) *mcpgw_v1.MessageOptions {
 	mopt := &mcpgw_v1.MessageOptions{}
-	_, err := m.Extension(mcpgw_v1.E_Message, mopt)
-	if err != nil {
+	ok, err := m.Extension(mcpgw_v1.E_Message, mopt)
+	if err != nil || !ok {
 		return nil
 	}
 	return mopt
@@ -73,8 +73,8 @@ func getMessageOptions(m pgs.Message) *mcpgw_v1.MessageOptions {
 
 func getFieldOptions(m pgs.Field) *mcpgw_v1.FieldOptions {
 	fopt := &mcpgw_v1.FieldOptions{}
-	_, err := m.Extension(mcpgw_v1.E_Field, fopt)
-	if err != nil {
+	ok, err := m.Extension(mcpgw_v1.E_Field, fopt)
+	if err != nil || !ok {
 		return nil
 	}
 	return fopt
