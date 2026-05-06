@@ -2,6 +2,7 @@ package mcpgw
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 
 	apigw_v1 "github.com/ductone/protoc-gen-apigw/apigw/v1"
@@ -266,3 +267,44 @@ func TestMergeMethodMetadata(t *testing.T) {
 }
 
 func ptr[T any](v T) *T { return &v }
+
+// TestServiceTemplateEscapesTitleAndDescription verifies that proto
+// leading comments (used as MCP tool descriptions) containing characters
+// that would break a Go double-quoted string literal — specifically `"`
+// and `\` — are escaped in the generated output. Regression guard: an
+// earlier template used `Description: "{{ .Description }}"` which
+// produced invalid Go for any comment containing a quote.
+func TestServiceTemplateEscapesTitleAndDescription(t *testing.T) {
+	c := &serviceTemplateContext{
+		ServerName:         "AppsServer",
+		FullyQualifiedName: "test.v1.Apps",
+		Methods: []*methodTemplateContext{
+			{
+				MethodDesc: mcpgw_v1.MethodDesc{
+					Method:      "Apps_Get_FullMethodName",
+					Title:       `tricky "quote" and \ slash`,
+					Description: "Has \"quotes\", a backslash \\, and a newline\nright here.",
+				},
+				MethodHandlerName:      "_Apps_Get_MCPGW_Handler",
+				DecoderHandlerName:     "_Apps_Get_MCPGW_Decoder",
+				InputSchemaHandlerName: "_Apps_Get_MCPGW_InputSchema",
+				RequestType:            "GetRequest",
+				ServerName:             "AppsServer",
+				MethodName:             "Get",
+				FullMethodName:         "Apps_Get_FullMethodName",
+			},
+		},
+	}
+	out, err := templateExecToString("service.tmpl", c)
+	if err != nil {
+		t.Fatalf("templateExecToString: %v", err)
+	}
+	wantTitle := `Title: "tricky \"quote\" and \\ slash"`
+	if !strings.Contains(out, wantTitle) {
+		t.Errorf("expected escaped title %q in output; got:\n%s", wantTitle, out)
+	}
+	wantDesc := `Description: "Has \"quotes\", a backslash \\, and a newline\nright here."`
+	if !strings.Contains(out, wantDesc) {
+		t.Errorf("expected escaped description %q in output; got:\n%s", wantDesc, out)
+	}
+}
