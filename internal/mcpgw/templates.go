@@ -6,8 +6,19 @@ import (
 	"fmt"
 	"io/fs"
 	"path"
+	"strconv"
 	"text/template"
 )
+
+// templateFuncs are registered on every parsed template. goquote wraps
+// arbitrary strings (e.g. proto leading comments used as MCP tool
+// descriptions) into a Go double-quoted string literal with embedded
+// quotes, backslashes, and control characters escaped. Templates should
+// invoke it as `{{ .Field | goquote }}` and omit surrounding double
+// quotes; goquote provides them.
+var templateFuncs = template.FuncMap{
+	"goquote": strconv.Quote,
+}
 
 var (
 	//go:embed templates/*.tmpl
@@ -44,7 +55,7 @@ func loadTemplates() error {
 			continue
 		}
 
-		pt, err := template.ParseFS(templateFiles, path.Join("templates", tmpl.Name()))
+		pt, err := template.New(tmpl.Name()).Funcs(templateFuncs).ParseFS(templateFiles, path.Join("templates", tmpl.Name()))
 		if err != nil {
 			return err
 		}
