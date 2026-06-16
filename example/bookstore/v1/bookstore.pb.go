@@ -3362,14 +3362,15 @@ const file_bookstore_v1_bookstore_proto_rawDesc = "" +
 	"extraPages\x12\x12\n" +
 	"\x04prop\x18\x04 \x01(\tR\x04prop\"=\n" +
 	"\x11ListBooksResponse\x12(\n" +
-	"\x05books\x18\x01 \x03(\v2\x12.bookstore.v1.BookR\x05books2\x85\r\n" +
+	"\x05books\x18\x01 \x03(\v2\x12.bookstore.v1.BookR\x05books2\xad\r\n" +
 	"\x10BookstoreService\x12\x8d\x01\n" +
 	"\vListShelves\x12 .bookstore.v1.ListShelvesRequest\x1a!.bookstore.v1.ListShelvesResponse\"9ڜ\x045\n" +
 	"\fList Shelves\x12!List all shelves in the bookstore\x18\x01(\x01\x12\x8b\x01\n" +
 	"\vCreateShelf\x12 .bookstore.v1.CreateShelfRequest\x1a!.bookstore.v1.CreateShelfResponse\"7ڜ\x043\n" +
-	"\fCreate Shelf\x12#Create a new shelf in the bookstore\x12\x89\x01\n" +
-	"\vDeleteShelf\x12 .bookstore.v1.DeleteShelfRequest\x1a!.bookstore.v1.DeleteShelfResponse\"5ڜ\x041\n" +
-	"\fDelete Shelf\x12\x1fDelete a shelf in the bookstore \x01\x12\x86\x01\n" +
+	"\fCreate Shelf\x12#Create a new shelf in the bookstore\x12\xb1\x01\n" +
+	"\vDeleteShelf\x12 .bookstore.v1.DeleteShelfRequest\x1a!.bookstore.v1.DeleteShelfResponse\"]ڜ\x04Y\n" +
+	"\fDelete Shelf\x12\x1fDelete a shelf in the bookstore \x01:\vdestructiveB\x19\n" +
+	"\x04high\x12\x06tenant\x1a\tinventory\x12\x86\x01\n" +
 	"\n" +
 	"ListGenres\x12\x1f.bookstore.v1.ListGenresRequest\x1a .bookstore.v1.ListGenresResponse\"5ڜ\x041\n" +
 	"\vList Genres\x12 List all genres in the bookstore\x18\x01\x12\x8b\x01\n" +

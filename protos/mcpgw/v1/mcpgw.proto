@@ -45,6 +45,27 @@ message MethodOptions {
   bool destructive_hint = 4;
   bool idempotent_hint = 5;
   bool open_world_hint = 6;
+
+  // classification labels the method's action shape — "read", "write", or
+  // "destructive". Mirrors bundle.v1.Operation.classification in
+  // ductone/mcp-axiomatic so a single downstream translator can derive
+  // AI-guardrail capability bits from either surface.
+  string classification = 7;
+
+  // delegation carries per-method risk and sensitivity tags. Mirrors
+  // bundle.v1.DelegationMeta in ductone/mcp-axiomatic — field names and
+  // numbers stay aligned.
+  DelegationMeta delegation = 8;
+}
+
+message DelegationMeta {
+  // "low" / "medium" / "high".
+  string risk_level = 1;
+  // "none" / "tenant" / "external".
+  string mutation_scope = 2;
+  // Free-form tags consumed by the downstream translator
+  // (e.g. "pii", "credential", "financial").
+  repeated string sensitivity_tags = 3;
 }
 
 message ServiceOptions {

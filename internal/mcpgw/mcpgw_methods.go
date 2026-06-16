@@ -22,6 +22,11 @@ type methodTemplateContext struct {
 	ServerName             string
 	MethodName             string
 	FullMethodName         string
+	// DelegationLiteral is the Go source for a *mcpgw_v1.DelegationMeta
+	// literal, or "" when the method has no delegation tagging. Kept as a
+	// string so the template only emits the Delegation field when there
+	// is something to set.
+	DelegationLiteral string
 }
 
 // methodContext builds the template context for a single RPC method.
@@ -55,18 +60,25 @@ func (module *Module) methodContext(ctx pgsgo.Context, w io.Writer, f pgs.File, 
 	ix.Protojson = true
 	ix.GRPC = true
 
-	title, description, readOnly, destructive, idempotent, openWorld := mergeMethodMetadata(mext, aop, deriveToolName(service, method), deriveDescription(method, aop))
+	title, description, readOnly, destructive, idempotent, openWorld, classification, delegation := mergeMethodMetadata(mext, aop, deriveToolName(service, method), deriveDescription(method, aop))
+
+	delegationLiteral := formatDelegationLiteral(delegation)
+	if delegationLiteral != "" {
+		ix.Proto = true
+	}
 
 	rv := &methodTemplateContext{
 		MethodDesc: mcpgw_v1.MethodDesc{
-			Method:        methodFullName,
-			Title:         title,
-			Description:   description,
-			ReadOnlyHint:  readOnly,
-			Destructive:   destructive,
-			Idempotent:    idempotent,
-			OpenWorldHint: openWorld,
+			Method:         methodFullName,
+			Title:          title,
+			Description:    description,
+			ReadOnlyHint:   readOnly,
+			Destructive:    destructive,
+			Idempotent:     idempotent,
+			OpenWorldHint:  openWorld,
+			Classification: classification,
 		},
+		DelegationLiteral: delegationLiteral,
 		ServerName:     ctx.ServerName(service).String(),
 		MethodName:     methodShortName,
 		FullMethodName: methodFullName,
@@ -98,7 +110,7 @@ func (module *Module) methodContext(ctx pgsgo.Context, w io.Writer, f pgs.File, 
 // derivedTitle and derivedDescription are precomputed so the merge logic
 // stays a pure function of the proto options — see deriveToolName /
 // deriveDescription for the pgs-dependent halves.
-func mergeMethodMetadata(mext *mcpgw_v1.MethodOptions, aop *apigw_v1.Operation, derivedTitle, derivedDescription string) (title, description string, readOnly, destructive, idempotent, openWorld bool) {
+func mergeMethodMetadata(mext *mcpgw_v1.MethodOptions, aop *apigw_v1.Operation, derivedTitle, derivedDescription string) (title, description string, readOnly, destructive, idempotent, openWorld bool, classification string, delegation *mcpgw_v1.DelegationMeta) {
 	if mext != nil && mext.HasTitle() {
 		title = mext.GetTitle()
 	} else {
@@ -121,7 +133,44 @@ func mergeMethodMetadata(mext *mcpgw_v1.MethodOptions, aop *apigw_v1.Operation, 
 	if mext != nil && mext.HasOpenWorldHint() {
 		openWorld = mext.GetOpenWorldHint()
 	}
+
+	// classification and delegation are aigov tags with no apigw analog; pass
+	// through from the explicit mcpgw annotation when present, otherwise leave
+	// unset.
+	if mext != nil && mext.HasClassification() {
+		classification = mext.GetClassification()
+	}
+	if mext != nil && mext.HasDelegation() {
+		delegation = mext.GetDelegation()
+	}
 	return
+}
+
+// formatDelegationLiteral returns the Go source for a *mcpgw_v1.DelegationMeta
+// literal corresponding to d, or "" if d has no set fields (in which case the
+// generated MethodDesc.Delegation stays nil).
+func formatDelegationLiteral(d *mcpgw_v1.DelegationMeta) string {
+	if d == nil {
+		return ""
+	}
+	var parts []string
+	if d.HasRiskLevel() {
+		parts = append(parts, fmt.Sprintf("RiskLevel: proto.String(%q)", d.GetRiskLevel()))
+	}
+	if d.HasMutationScope() {
+		parts = append(parts, fmt.Sprintf("MutationScope: proto.String(%q)", d.GetMutationScope()))
+	}
+	if tags := d.GetSensitivityTags(); len(tags) > 0 {
+		quoted := make([]string, len(tags))
+		for i, t := range tags {
+			quoted[i] = fmt.Sprintf("%q", t)
+		}
+		parts = append(parts, fmt.Sprintf("SensitivityTags: []string{%s}", strings.Join(quoted, ", ")))
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	return "mcpgw_v1.DelegationMeta_builder{" + strings.Join(parts, ", ") + "}.Build()"
 }
 
 // resolveHint picks an explicit mcpgw bool when present, otherwise falls

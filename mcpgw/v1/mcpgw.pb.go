@@ -216,6 +216,8 @@ type MethodOptions struct {
 	xxx_hidden_DestructiveHint bool                   `protobuf:"varint,4,opt,name=destructive_hint,json=destructiveHint"`
 	xxx_hidden_IdempotentHint  bool                   `protobuf:"varint,5,opt,name=idempotent_hint,json=idempotentHint"`
 	xxx_hidden_OpenWorldHint   bool                   `protobuf:"varint,6,opt,name=open_world_hint,json=openWorldHint"`
+	xxx_hidden_Classification  *string                `protobuf:"bytes,7,opt,name=classification"`
+	xxx_hidden_Delegation      *DelegationMeta        `protobuf:"bytes,8,opt,name=delegation"`
 	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
 	XXX_presence               [1]uint32
 	unknownFields              protoimpl.UnknownFields
@@ -295,34 +297,60 @@ func (x *MethodOptions) GetOpenWorldHint() bool {
 	return false
 }
 
+func (x *MethodOptions) GetClassification() string {
+	if x != nil {
+		if x.xxx_hidden_Classification != nil {
+			return *x.xxx_hidden_Classification
+		}
+		return ""
+	}
+	return ""
+}
+
+func (x *MethodOptions) GetDelegation() *DelegationMeta {
+	if x != nil {
+		return x.xxx_hidden_Delegation
+	}
+	return nil
+}
+
 func (x *MethodOptions) SetTitle(v string) {
 	x.xxx_hidden_Title = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 8)
 }
 
 func (x *MethodOptions) SetDescription(v string) {
 	x.xxx_hidden_Description = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 8)
 }
 
 func (x *MethodOptions) SetReadOnlyHint(v bool) {
 	x.xxx_hidden_ReadOnlyHint = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 8)
 }
 
 func (x *MethodOptions) SetDestructiveHint(v bool) {
 	x.xxx_hidden_DestructiveHint = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 8)
 }
 
 func (x *MethodOptions) SetIdempotentHint(v bool) {
 	x.xxx_hidden_IdempotentHint = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 8)
 }
 
 func (x *MethodOptions) SetOpenWorldHint(v bool) {
 	x.xxx_hidden_OpenWorldHint = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 8)
+}
+
+func (x *MethodOptions) SetClassification(v string) {
+	x.xxx_hidden_Classification = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 8)
+}
+
+func (x *MethodOptions) SetDelegation(v *DelegationMeta) {
+	x.xxx_hidden_Delegation = v
 }
 
 func (x *MethodOptions) HasTitle() bool {
@@ -367,6 +395,20 @@ func (x *MethodOptions) HasOpenWorldHint() bool {
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
+func (x *MethodOptions) HasClassification() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
+}
+
+func (x *MethodOptions) HasDelegation() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Delegation != nil
+}
+
 func (x *MethodOptions) ClearTitle() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
 	x.xxx_hidden_Title = nil
@@ -397,6 +439,15 @@ func (x *MethodOptions) ClearOpenWorldHint() {
 	x.xxx_hidden_OpenWorldHint = false
 }
 
+func (x *MethodOptions) ClearClassification() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_Classification = nil
+}
+
+func (x *MethodOptions) ClearDelegation() {
+	x.xxx_hidden_Delegation = nil
+}
+
 type MethodOptions_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -406,6 +457,15 @@ type MethodOptions_builder struct {
 	DestructiveHint *bool
 	IdempotentHint  *bool
 	OpenWorldHint   *bool
+	// classification labels the method's action shape — "read", "write", or
+	// "destructive". Mirrors bundle.v1.Operation.classification in
+	// ductone/mcp-axiomatic so a single downstream translator can derive
+	// AI-guardrail capability bits from either surface.
+	Classification *string
+	// delegation carries per-method risk and sensitivity tags. Mirrors
+	// bundle.v1.DelegationMeta in ductone/mcp-axiomatic — field names and
+	// numbers stay aligned.
+	Delegation *DelegationMeta
 }
 
 func (b0 MethodOptions_builder) Build() *MethodOptions {
@@ -413,29 +473,163 @@ func (b0 MethodOptions_builder) Build() *MethodOptions {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Title != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 8)
 		x.xxx_hidden_Title = b.Title
 	}
 	if b.Description != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 8)
 		x.xxx_hidden_Description = b.Description
 	}
 	if b.ReadOnlyHint != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 8)
 		x.xxx_hidden_ReadOnlyHint = *b.ReadOnlyHint
 	}
 	if b.DestructiveHint != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 8)
 		x.xxx_hidden_DestructiveHint = *b.DestructiveHint
 	}
 	if b.IdempotentHint != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 8)
 		x.xxx_hidden_IdempotentHint = *b.IdempotentHint
 	}
 	if b.OpenWorldHint != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 8)
 		x.xxx_hidden_OpenWorldHint = *b.OpenWorldHint
 	}
+	if b.Classification != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
+		x.xxx_hidden_Classification = b.Classification
+	}
+	x.xxx_hidden_Delegation = b.Delegation
+	return m0
+}
+
+type DelegationMeta struct {
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RiskLevel       *string                `protobuf:"bytes,1,opt,name=risk_level,json=riskLevel"`
+	xxx_hidden_MutationScope   *string                `protobuf:"bytes,2,opt,name=mutation_scope,json=mutationScope"`
+	xxx_hidden_SensitivityTags []string               `protobuf:"bytes,3,rep,name=sensitivity_tags,json=sensitivityTags"`
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
+}
+
+func (x *DelegationMeta) Reset() {
+	*x = DelegationMeta{}
+	mi := &file_mcpgw_v1_mcpgw_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DelegationMeta) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DelegationMeta) ProtoMessage() {}
+
+func (x *DelegationMeta) ProtoReflect() protoreflect.Message {
+	mi := &file_mcpgw_v1_mcpgw_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *DelegationMeta) GetRiskLevel() string {
+	if x != nil {
+		if x.xxx_hidden_RiskLevel != nil {
+			return *x.xxx_hidden_RiskLevel
+		}
+		return ""
+	}
+	return ""
+}
+
+func (x *DelegationMeta) GetMutationScope() string {
+	if x != nil {
+		if x.xxx_hidden_MutationScope != nil {
+			return *x.xxx_hidden_MutationScope
+		}
+		return ""
+	}
+	return ""
+}
+
+func (x *DelegationMeta) GetSensitivityTags() []string {
+	if x != nil {
+		return x.xxx_hidden_SensitivityTags
+	}
+	return nil
+}
+
+func (x *DelegationMeta) SetRiskLevel(v string) {
+	x.xxx_hidden_RiskLevel = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+}
+
+func (x *DelegationMeta) SetMutationScope(v string) {
+	x.xxx_hidden_MutationScope = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+}
+
+func (x *DelegationMeta) SetSensitivityTags(v []string) {
+	x.xxx_hidden_SensitivityTags = v
+}
+
+func (x *DelegationMeta) HasRiskLevel() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+}
+
+func (x *DelegationMeta) HasMutationScope() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+}
+
+func (x *DelegationMeta) ClearRiskLevel() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_RiskLevel = nil
+}
+
+func (x *DelegationMeta) ClearMutationScope() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_MutationScope = nil
+}
+
+type DelegationMeta_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// "low" / "medium" / "high".
+	RiskLevel *string
+	// "none" / "tenant" / "external".
+	MutationScope *string
+	// Free-form tags consumed by the downstream translator
+	// (e.g. "pii", "credential", "financial").
+	SensitivityTags []string
+}
+
+func (b0 DelegationMeta_builder) Build() *DelegationMeta {
+	m0 := &DelegationMeta{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.RiskLevel != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
+		x.xxx_hidden_RiskLevel = b.RiskLevel
+	}
+	if b.MutationScope != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
+		x.xxx_hidden_MutationScope = b.MutationScope
+	}
+	x.xxx_hidden_SensitivityTags = b.SensitivityTags
 	return m0
 }
 
@@ -450,7 +644,7 @@ type ServiceOptions struct {
 
 func (x *ServiceOptions) Reset() {
 	*x = ServiceOptions{}
-	mi := &file_mcpgw_v1_mcpgw_proto_msgTypes[3]
+	mi := &file_mcpgw_v1_mcpgw_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -462,7 +656,7 @@ func (x *ServiceOptions) String() string {
 func (*ServiceOptions) ProtoMessage() {}
 
 func (x *ServiceOptions) ProtoReflect() protoreflect.Message {
-	mi := &file_mcpgw_v1_mcpgw_proto_msgTypes[3]
+	mi := &file_mcpgw_v1_mcpgw_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -583,14 +777,23 @@ const file_mcpgw_v1_mcpgw_proto_rawDesc = "" +
 	"allowNulls\"L\n" +
 	"\fFieldOptions\x12 \n" +
 	"\vdescription\x18\x01 \x01(\tR\vdescription\x12\x1a\n" +
-	"\brequired\x18\x02 \x01(\bR\brequired\"\xe9\x01\n" +
+	"\brequired\x18\x02 \x01(\bR\brequired\"\xcb\x02\n" +
 	"\rMethodOptions\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12$\n" +
 	"\x0eread_only_hint\x18\x03 \x01(\bR\freadOnlyHint\x12)\n" +
 	"\x10destructive_hint\x18\x04 \x01(\bR\x0fdestructiveHint\x12'\n" +
 	"\x0fidempotent_hint\x18\x05 \x01(\bR\x0eidempotentHint\x12&\n" +
-	"\x0fopen_world_hint\x18\x06 \x01(\bR\ropenWorldHint\"*\n" +
+	"\x0fopen_world_hint\x18\x06 \x01(\bR\ropenWorldHint\x12&\n" +
+	"\x0eclassification\x18\a \x01(\tR\x0eclassification\x128\n" +
+	"\n" +
+	"delegation\x18\b \x01(\v2\x18.mcpgw.v1.DelegationMetaR\n" +
+	"delegation\"\x81\x01\n" +
+	"\x0eDelegationMeta\x12\x1d\n" +
+	"\n" +
+	"risk_level\x18\x01 \x01(\tR\triskLevel\x12%\n" +
+	"\x0emutation_scope\x18\x02 \x01(\tR\rmutationScope\x12)\n" +
+	"\x10sensitivity_tags\x18\x03 \x03(\tR\x0fsensitivityTags\"*\n" +
 	"\x0eServiceOptions\x12\x18\n" +
 	"\aenabled\x18\x01 \x01(\bR\aenabled:T\n" +
 	"\aservice\x12\x1f.google.protobuf.ServiceOptions\x18\xcaC \x01(\v2\x18.mcpgw.v1.ServiceOptionsR\aservice:P\n" +
@@ -600,31 +803,33 @@ const file_mcpgw_v1_mcpgw_proto_rawDesc = "" +
 	"\fcom.mcpgw.v1B\n" +
 	"McpgwProtoP\x01Z,github.com/ductone/protoc-gen-mcpgw/mcpgw/v1\xa2\x02\x03MXX\xaa\x02\bMcpgw.V1\xca\x02\bMcpgw\\V1\xe2\x02\x14Mcpgw\\V1\\GPBMetadata\xea\x02\tMcpgw::V1\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
 
-var file_mcpgw_v1_mcpgw_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_mcpgw_v1_mcpgw_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_mcpgw_v1_mcpgw_proto_goTypes = []any{
 	(*MessageOptions)(nil),              // 0: mcpgw.v1.MessageOptions
 	(*FieldOptions)(nil),                // 1: mcpgw.v1.FieldOptions
 	(*MethodOptions)(nil),               // 2: mcpgw.v1.MethodOptions
-	(*ServiceOptions)(nil),              // 3: mcpgw.v1.ServiceOptions
-	(*descriptorpb.ServiceOptions)(nil), // 4: google.protobuf.ServiceOptions
-	(*descriptorpb.MethodOptions)(nil),  // 5: google.protobuf.MethodOptions
-	(*descriptorpb.FieldOptions)(nil),   // 6: google.protobuf.FieldOptions
-	(*descriptorpb.MessageOptions)(nil), // 7: google.protobuf.MessageOptions
+	(*DelegationMeta)(nil),              // 3: mcpgw.v1.DelegationMeta
+	(*ServiceOptions)(nil),              // 4: mcpgw.v1.ServiceOptions
+	(*descriptorpb.ServiceOptions)(nil), // 5: google.protobuf.ServiceOptions
+	(*descriptorpb.MethodOptions)(nil),  // 6: google.protobuf.MethodOptions
+	(*descriptorpb.FieldOptions)(nil),   // 7: google.protobuf.FieldOptions
+	(*descriptorpb.MessageOptions)(nil), // 8: google.protobuf.MessageOptions
 }
 var file_mcpgw_v1_mcpgw_proto_depIdxs = []int32{
-	4, // 0: mcpgw.v1.service:extendee -> google.protobuf.ServiceOptions
-	5, // 1: mcpgw.v1.method:extendee -> google.protobuf.MethodOptions
-	6, // 2: mcpgw.v1.field:extendee -> google.protobuf.FieldOptions
-	7, // 3: mcpgw.v1.message:extendee -> google.protobuf.MessageOptions
-	3, // 4: mcpgw.v1.service:type_name -> mcpgw.v1.ServiceOptions
-	2, // 5: mcpgw.v1.method:type_name -> mcpgw.v1.MethodOptions
-	1, // 6: mcpgw.v1.field:type_name -> mcpgw.v1.FieldOptions
-	0, // 7: mcpgw.v1.message:type_name -> mcpgw.v1.MessageOptions
-	8, // [8:8] is the sub-list for method output_type
-	8, // [8:8] is the sub-list for method input_type
-	4, // [4:8] is the sub-list for extension type_name
-	0, // [0:4] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	3, // 0: mcpgw.v1.MethodOptions.delegation:type_name -> mcpgw.v1.DelegationMeta
+	5, // 1: mcpgw.v1.service:extendee -> google.protobuf.ServiceOptions
+	6, // 2: mcpgw.v1.method:extendee -> google.protobuf.MethodOptions
+	7, // 3: mcpgw.v1.field:extendee -> google.protobuf.FieldOptions
+	8, // 4: mcpgw.v1.message:extendee -> google.protobuf.MessageOptions
+	4, // 5: mcpgw.v1.service:type_name -> mcpgw.v1.ServiceOptions
+	2, // 6: mcpgw.v1.method:type_name -> mcpgw.v1.MethodOptions
+	1, // 7: mcpgw.v1.field:type_name -> mcpgw.v1.FieldOptions
+	0, // 8: mcpgw.v1.message:type_name -> mcpgw.v1.MessageOptions
+	9, // [9:9] is the sub-list for method output_type
+	9, // [9:9] is the sub-list for method input_type
+	5, // [5:9] is the sub-list for extension type_name
+	1, // [1:5] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_mcpgw_v1_mcpgw_proto_init() }
@@ -638,7 +843,7 @@ func file_mcpgw_v1_mcpgw_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mcpgw_v1_mcpgw_proto_rawDesc), len(file_mcpgw_v1_mcpgw_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 4,
 			NumServices:   0,
 		},

@@ -19,6 +19,10 @@ var mcpgw_desc_{{- .ServerName -}} = mcpgw_v1.ServiceDesc{
             Destructive: {{ .Destructive -}},
             Idempotent: {{ .Idempotent -}},
             OpenWorldHint: {{ .OpenWorldHint -}},
+            Classification: {{ .Classification | goquote }},
+            {{- if .DelegationLiteral }}
+            Delegation: {{ .DelegationLiteral }},
+            {{- end }}
 		},
 		{{- end }}
 	},

@@ -40,6 +40,12 @@ service BookstoreService {
       title: "Delete Shelf"
       description: "Delete a shelf in the bookstore"
       destructive_hint: true
+      classification: "destructive"
+      delegation: {
+        risk_level: "high"
+        mutation_scope: "tenant"
+        sensitivity_tags: ["inventory"]
+      }
     };
   }
 

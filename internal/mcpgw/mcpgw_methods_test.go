@@ -103,15 +103,17 @@ func TestMergeMethodMetadata(t *testing.T) {
 	const derivedDescription = "GET /v1/apps"
 
 	cases := []struct {
-		name           string
-		mext           *mcpgw_v1.MethodOptions
-		aop            *apigw_v1.Operation
-		wantTitle      string
-		wantDesc       string
-		wantReadOnly   bool
-		wantDestruct   bool
-		wantIdempotent bool
-		wantOpenWorld  bool
+		name               string
+		mext               *mcpgw_v1.MethodOptions
+		aop                *apigw_v1.Operation
+		wantTitle          string
+		wantDesc           string
+		wantReadOnly       bool
+		wantDestruct       bool
+		wantIdempotent     bool
+		wantOpenWorld      bool
+		wantClassification string
+		wantDelegation     bool // true = expect non-nil delegation; false = expect nil
 	}{
 		{
 			name:           "no annotations falls back to derived",
@@ -235,15 +237,48 @@ func TestMergeMethodMetadata(t *testing.T) {
 				Title:        ptr("Manual"),
 				ReadOnlyHint: ptr(true),
 			}.Build(),
+			aop:          nil,
+			wantTitle:    "Manual",
+			wantDesc:     derivedDescription,
+			wantReadOnly: true,
+		},
+		{
+			name: "classification passes through from mcpgw annotation",
+			mext: mcpgw_v1.MethodOptions_builder{
+				Classification: ptr("destructive"),
+			}.Build(),
+			aop:                nil,
+			wantTitle:          derivedTitle,
+			wantDesc:           derivedDescription,
+			wantClassification: "destructive",
+		},
+		{
+			name: "delegation passes through from mcpgw annotation",
+			mext: mcpgw_v1.MethodOptions_builder{
+				Delegation: mcpgw_v1.DelegationMeta_builder{
+					RiskLevel:       ptr("high"),
+					MutationScope:   ptr("external"),
+					SensitivityTags: []string{"pii", "credential"},
+				}.Build(),
+			}.Build(),
 			aop:            nil,
-			wantTitle:      "Manual",
+			wantTitle:      derivedTitle,
+			wantDesc:       derivedDescription,
+			wantDelegation: true,
+		},
+		{
+			name:           "no classification or delegation leaves both unset",
+			mext:           nil,
+			aop:            &apigw_v1.Operation{Method: "GET", Route: "/v1/apps"},
+			wantTitle:      derivedTitle,
 			wantDesc:       derivedDescription,
 			wantReadOnly:   true,
+			wantIdempotent: true,
 		},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			title, desc, ro, destr, idem, ow := mergeMethodMetadata(c.mext, c.aop, derivedTitle, derivedDescription)
+			title, desc, ro, destr, idem, ow, cls, deleg := mergeMethodMetadata(c.mext, c.aop, derivedTitle, derivedDescription)
 			if title != c.wantTitle {
 				t.Errorf("title = %q, want %q", title, c.wantTitle)
 			}
@@ -261,6 +296,61 @@ func TestMergeMethodMetadata(t *testing.T) {
 			}
 			if ow != c.wantOpenWorld {
 				t.Errorf("openWorld = %v, want %v", ow, c.wantOpenWorld)
+			}
+			if cls != c.wantClassification {
+				t.Errorf("classification = %q, want %q", cls, c.wantClassification)
+			}
+			if (deleg != nil) != c.wantDelegation {
+				t.Errorf("delegation present? = %v, want %v", deleg != nil, c.wantDelegation)
+			}
+		})
+	}
+}
+
+func TestFormatDelegationLiteral(t *testing.T) {
+	cases := []struct {
+		name string
+		in   *mcpgw_v1.DelegationMeta
+		want string
+	}{
+		{
+			name: "nil delegation produces no literal",
+			in:   nil,
+			want: "",
+		},
+		{
+			name: "empty delegation produces no literal",
+			in:   mcpgw_v1.DelegationMeta_builder{}.Build(),
+			want: "",
+		},
+		{
+			name: "risk level only",
+			in: mcpgw_v1.DelegationMeta_builder{
+				RiskLevel: ptr("medium"),
+			}.Build(),
+			want: `mcpgw_v1.DelegationMeta_builder{RiskLevel: proto.String("medium")}.Build()`,
+		},
+		{
+			name: "all fields set",
+			in: mcpgw_v1.DelegationMeta_builder{
+				RiskLevel:       ptr("high"),
+				MutationScope:   ptr("external"),
+				SensitivityTags: []string{"pii", "credential"},
+			}.Build(),
+			want: `mcpgw_v1.DelegationMeta_builder{RiskLevel: proto.String("high"), MutationScope: proto.String("external"), SensitivityTags: []string{"pii", "credential"}}.Build()`,
+		},
+		{
+			name: "tag with embedded quote is escaped",
+			in: mcpgw_v1.DelegationMeta_builder{
+				SensitivityTags: []string{`tricky"tag`},
+			}.Build(),
+			want: `mcpgw_v1.DelegationMeta_builder{SensitivityTags: []string{"tricky\"tag"}}.Build()`,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := formatDelegationLiteral(c.in); got != c.want {
+				t.Errorf("got:\n%s\nwant:\n%s", got, c.want)
 			}
 		})
 	}

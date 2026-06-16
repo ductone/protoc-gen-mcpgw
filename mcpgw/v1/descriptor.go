@@ -18,16 +18,18 @@ type decoderHandler func(ctx context.Context, input DecoderInput, out proto.Mess
 type inputSchemaHandler func() (map[string]any)
 
 type MethodDesc struct {
-	Method        string
-	Handler       methodHandler
-	Decoder       decoderHandler
-	InputSchema   inputSchemaHandler
-	Title         string
-	Description   string
-	ReadOnlyHint  bool
-	Destructive   bool
-	Idempotent    bool
-	OpenWorldHint bool
+	Method         string
+	Handler        methodHandler
+	Decoder        decoderHandler
+	InputSchema    inputSchemaHandler
+	Title          string
+	Description    string
+	ReadOnlyHint   bool
+	Destructive    bool
+	Idempotent     bool
+	OpenWorldHint  bool
+	Classification string
+	Delegation     *DelegationMeta
 }
 
 type ServiceRegistrar interface {
