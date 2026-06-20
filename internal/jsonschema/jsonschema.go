@@ -57,7 +57,6 @@ package jsonschema
 import (
 	"fmt"
 	"regexp"
-	"strings"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -88,9 +87,6 @@ const (
 	valueFullName     = "google.protobuf.Value"
 	listValueFullName = "google.protobuf.ListValue"
 	anyFullName       = "google.protobuf.Any"
-
-	// Buf validate extension name
-	bufValidateFieldExt = "buf.validate.field"
 )
 
 // GenerateJSONSchema generates a JSON Schema (draft-2020-12) for a Protobuf message.
@@ -492,13 +488,13 @@ func isFieldRequired(fd protoreflect.FieldDescriptor) bool {
 		return true
 	}
 
-	// Check for validation rules that might indicate a field is required
 	opts := fd.Options()
 	if opts == nil {
 		return false
 	}
 
-	// If mcpgw field option explicitly sets required, honor it (true or false)
+	// If the mcpgw field option explicitly sets required, honor it (true or
+	// false) — an explicit author choice overrides anything inferred below.
 	if proto.HasExtension(opts, mcpgw_v1.E_Field) {
 		if extVal := proto.GetExtension(opts, mcpgw_v1.E_Field); extVal != nil {
 			if extMsg, ok := extVal.(proto.Message); ok && extMsg != nil {
@@ -512,51 +508,10 @@ func isFieldRequired(fd protoreflect.FieldDescriptor) bool {
 		}
 	}
 
-	// Use reflection to check for validation rules, as it's more resilient
-	// to different versions of the validate package
-	optsReflect := opts.ProtoReflect()
-
-	// Look for buf.validate extensions by name/path pattern
-	for i := 0; i < opts.ProtoReflect().Descriptor().Extensions().Len(); i++ {
-		ext := opts.ProtoReflect().Descriptor().Extensions().Get(i)
-		extName := string(ext.FullName())
-
-		if strings.Contains(extName, bufValidateFieldExt) {
-			// Check if this is a string field with min_len >= 1
-			if fd.Kind() == protoreflect.StringKind {
-				if msgOpt, ok := optsReflect.Get(ext).Interface().(proto.Message); ok {
-					msgReflect := msgOpt.ProtoReflect()
-
-					// Check for string rules
-					if stringRulesField := msgReflect.Descriptor().Fields().ByName("string"); stringRulesField != nil {
-						stringRules := msgReflect.Get(stringRulesField)
-						if stringRules.IsValid() {
-							stringRulesMsg := stringRules.Message()
-
-							// Look for min_len
-							if minLenField := stringRulesMsg.Descriptor().Fields().ByName("min_len"); minLenField != nil {
-								minLen := stringRulesMsg.Get(minLenField)
-								if minLen.IsValid() && minLen.Uint() >= 1 {
-									return true
-								}
-							}
-						}
-					}
-
-					// Check for required field directly
-					if requiredField := msgReflect.Descriptor().Fields().ByName("required"); requiredField != nil {
-						requiredVal := msgReflect.Get(requiredField)
-						if requiredVal.IsValid() && requiredVal.Bool() {
-							return true
-						}
-					}
-				}
-			}
-		}
-	}
-
-	// Not required by any criteria
-	return false
+	// Infer requiredness from validation rules (modern buf.validate and legacy
+	// protoc-gen-validate). A field is required only when its rules provably
+	// reject the zero value.
+	return requiredByValidate(fd)
 }
 
 // applyCustomFieldOptions applies mcpgw.v1.field options if present

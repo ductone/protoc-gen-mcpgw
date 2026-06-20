@@ -7,6 +7,7 @@ require (
 	buf.build/go/protovalidate v0.13.1
 	github.com/davecgh/go-spew v1.1.1
 	github.com/ductone/protoc-gen-apigw v0.4.1
+	github.com/envoyproxy/protoc-gen-validate v1.2.1
 	github.com/lyft/protoc-gen-star/v2 v2.0.4
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/stretchr/testify v1.10.0

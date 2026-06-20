@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package validation.v1;
+
+import "buf/validate/validate.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/ductone/protoc-gen-mcpgw/example/validation/v1";
+
+// ModernValidateRequest exercises the modern buf.validate (protovalidate)
+// extension. name is required solely because of its string.min_len rule (no
+// mcpgw field option), which proves the buf.validate required-derivation path.
+message ModernValidateRequest {
+  // Required: a non-empty string is mandatory.
+  string name = 1 [(buf.validate.field).string.min_len = 1];
+  // Optional: no rules at all.
+  string note = 2;
+}
+
+// LegacyPGVRequest exercises the legacy protoc-gen-validate (validate.rules)
+// extension that many request protos still use.
+message LegacyPGVRequest {
+  // Required: the pattern rejects the empty string.
+  string id = 1 [(validate.rules).string.pattern = "^[a-zA-Z0-9]+$"];
+  // Optional: ignore_empty means the min_len only applies to a non-empty value.
+  string query = 2 [(validate.rules).string = {
+    min_len: 1
+    ignore_empty: true
+  }];
+  // Optional pagination knobs: neither rejects the zero value.
+  int32 page_size = 3 [(validate.rules).int32.gte = 0];
+  bytes page_token = 4 [(validate.rules).bytes.min_len = 0];
+  // Required: at least one element is mandatory.
+  repeated string tags = 5 [(validate.rules).repeated.min_items = 1];
+}

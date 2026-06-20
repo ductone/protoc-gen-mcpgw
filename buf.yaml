@@ -26,4 +26,5 @@ modules:
         - FIELD_SAME_DEFAULT
 deps:
   - buf.build/bufbuild/protovalidate
+  - buf.build/envoyproxy/protoc-gen-validate
   - buf.build/protocolbuffers/wellknowntypes
