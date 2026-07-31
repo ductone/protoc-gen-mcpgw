@@ -3,6 +3,7 @@ syntax = "proto3";
 package validation.v1;
 
 import "buf/validate/validate.proto";
+import "mcpgw/v1/mcpgw.proto";
 import "validate/validate.proto";
 
 option go_package = "github.com/ductone/protoc-gen-mcpgw/example/validation/v1";
@@ -32,4 +33,62 @@ message LegacyPGVRequest {
   bytes page_token = 4 [(validate.rules).bytes.min_len = 0];
   // Required: at least one element is mandatory.
   repeated string tags = 5 [(validate.rules).repeated.min_items = 1];
+}
+
+// CollectionOptionsRequest exercises field options and validation rules on
+// repeated and map fields, whose rules are described at two levels: the
+// collection itself and each of its elements.
+message CollectionOptionsRequest {
+  // A repeated scalar carrying a description plus both array-level and
+  // item-level rules.
+  repeated string tags = 1 [
+    (mcpgw.v1.field) = {description: "Tags applied to the resource"},
+    (buf.validate.field).repeated = {
+      min_items: 1
+      max_items: 10
+      unique: true
+      items: {
+        string: {
+          min_len: 2
+          max_len: 32
+        }
+      }
+    }
+  ];
+
+  // A repeated message carrying a description; its item schema stays untouched.
+  repeated CollectionItem items = 2 [(mcpgw.v1.field) = {description: "Nested items"}];
+
+  // A map carrying a description, pair-count bounds, and key/value rules.
+  map<string, string> labels = 3 [
+    (mcpgw.v1.field) = {description: "Arbitrary labels"},
+    (buf.validate.field).map = {
+      min_pairs: 1
+      max_pairs: 5
+      keys: {
+        string: {min_len: 1}
+      }
+      values: {
+        string: {max_len: 64}
+      }
+    }
+  ];
+
+  // A singular scalar: guards the pre-existing behaviour of the normal path.
+  string name = 4 [
+    (mcpgw.v1.field) = {description: "The name of the resource"},
+    (buf.validate.field).string.min_len = 1
+  ];
+}
+
+// CollectionItem is the element type of CollectionOptionsRequest.items.
+message CollectionItem {
+  string id = 1 [(mcpgw.v1.field) = {description: "The item id"}];
+}
+
+// NullableCollectionRequest exercises allow_nulls for repeated and map fields.
+message NullableCollectionRequest {
+  option (mcpgw.v1.message) = {allow_nulls: true};
+  repeated string tags = 1 [(mcpgw.v1.field) = {description: "Tags applied to the resource"}];
+  map<string, string> labels = 2 [(mcpgw.v1.field) = {description: "Arbitrary labels"}];
 }

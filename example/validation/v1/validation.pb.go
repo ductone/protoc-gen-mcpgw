@@ -8,6 +8,7 @@ package v1
 
 import (
 	_ "buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
+	_ "github.com/ductone/protoc-gen-mcpgw/mcpgw/v1"
 	_ "github.com/envoyproxy/protoc-gen-validate/validate"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -162,11 +163,185 @@ func (x *LegacyPGVRequest) GetTags() []string {
 	return nil
 }
 
+// CollectionOptionsRequest exercises field options and validation rules on
+// repeated and map fields, whose rules are described at two levels: the
+// collection itself and each of its elements.
+type CollectionOptionsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// A repeated scalar carrying a description plus both array-level and
+	// item-level rules.
+	Tags []string `protobuf:"bytes,1,rep,name=tags,proto3" json:"tags,omitempty"`
+	// A repeated message carrying a description; its item schema stays untouched.
+	Items []*CollectionItem `protobuf:"bytes,2,rep,name=items,proto3" json:"items,omitempty"`
+	// A map carrying a description, pair-count bounds, and key/value rules.
+	Labels map[string]string `protobuf:"bytes,3,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// A singular scalar: guards the pre-existing behaviour of the normal path.
+	Name          string `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CollectionOptionsRequest) Reset() {
+	*x = CollectionOptionsRequest{}
+	mi := &file_validation_v1_validation_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CollectionOptionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CollectionOptionsRequest) ProtoMessage() {}
+
+func (x *CollectionOptionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_validation_v1_validation_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CollectionOptionsRequest.ProtoReflect.Descriptor instead.
+func (*CollectionOptionsRequest) Descriptor() ([]byte, []int) {
+	return file_validation_v1_validation_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *CollectionOptionsRequest) GetTags() []string {
+	if x != nil {
+		return x.Tags
+	}
+	return nil
+}
+
+func (x *CollectionOptionsRequest) GetItems() []*CollectionItem {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *CollectionOptionsRequest) GetLabels() map[string]string {
+	if x != nil {
+		return x.Labels
+	}
+	return nil
+}
+
+func (x *CollectionOptionsRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+// CollectionItem is the element type of CollectionOptionsRequest.items.
+type CollectionItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CollectionItem) Reset() {
+	*x = CollectionItem{}
+	mi := &file_validation_v1_validation_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CollectionItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CollectionItem) ProtoMessage() {}
+
+func (x *CollectionItem) ProtoReflect() protoreflect.Message {
+	mi := &file_validation_v1_validation_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CollectionItem.ProtoReflect.Descriptor instead.
+func (*CollectionItem) Descriptor() ([]byte, []int) {
+	return file_validation_v1_validation_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *CollectionItem) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+// NullableCollectionRequest exercises allow_nulls for repeated and map fields.
+type NullableCollectionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Tags          []string               `protobuf:"bytes,1,rep,name=tags,proto3" json:"tags,omitempty"`
+	Labels        map[string]string      `protobuf:"bytes,2,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NullableCollectionRequest) Reset() {
+	*x = NullableCollectionRequest{}
+	mi := &file_validation_v1_validation_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NullableCollectionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NullableCollectionRequest) ProtoMessage() {}
+
+func (x *NullableCollectionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_validation_v1_validation_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NullableCollectionRequest.ProtoReflect.Descriptor instead.
+func (*NullableCollectionRequest) Descriptor() ([]byte, []int) {
+	return file_validation_v1_validation_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *NullableCollectionRequest) GetTags() []string {
+	if x != nil {
+		return x.Tags
+	}
+	return nil
+}
+
+func (x *NullableCollectionRequest) GetLabels() map[string]string {
+	if x != nil {
+		return x.Labels
+	}
+	return nil
+}
+
 var File_validation_v1_validation_proto protoreflect.FileDescriptor
 
 const file_validation_v1_validation_proto_rawDesc = "" +
 	"\n" +
-	"\x1evalidation/v1/validation.proto\x12\rvalidation.v1\x1a\x1bbuf/validate/validate.proto\x1a\x17validate/validate.proto\"H\n" +
+	"\x1evalidation/v1/validation.proto\x12\rvalidation.v1\x1a\x1bbuf/validate/validate.proto\x1a\x14mcpgw/v1/mcpgw.proto\x1a\x17validate/validate.proto\"H\n" +
 	"\x15ModernValidateRequest\x12\x1b\n" +
 	"\x04name\x18\x01 \x01(\tB\a\xbaH\x04r\x02\x10\x01R\x04name\x12\x12\n" +
 	"\x04note\x18\x02 \x01(\tR\x04note\"\xc7\x01\n" +
@@ -177,7 +352,31 @@ const file_validation_v1_validation_proto_rawDesc = "" +
 	"\tpage_size\x18\x03 \x01(\x05B\a\xfaB\x04\x1a\x02(\x00R\bpageSize\x12&\n" +
 	"\n" +
 	"page_token\x18\x04 \x01(\fB\a\xfaB\x04z\x02\x10\x00R\tpageToken\x12\x1c\n" +
-	"\x04tags\x18\x05 \x03(\tB\b\xfaB\x05\x92\x01\x02\b\x01R\x04tagsB\xb4\x01\n" +
+	"\x04tags\x18\x05 \x03(\tB\b\xfaB\x05\x92\x01\x02\b\x01R\x04tags\"\xa0\x03\n" +
+	"\x18CollectionOptionsRequest\x12J\n" +
+	"\x04tags\x18\x01 \x03(\tB6\xbaH\x11\x92\x01\x0e\b\x01\x10\n" +
+	"\x18\x01\"\x06r\x04\x10\x02\x18 \xe2\x9c\x04\x1e\n" +
+	"\x1cTags applied to the resourceR\x04tags\x12G\n" +
+	"\x05items\x18\x02 \x03(\v2\x1d.validation.v1.CollectionItemB\x12\xe2\x9c\x04\x0e\n" +
+	"\fNested itemsR\x05items\x12y\n" +
+	"\x06labels\x18\x03 \x03(\v23.validation.v1.CollectionOptionsRequest.LabelsEntryB,\xbaH\x13\x9a\x01\x10\b\x01\x10\x05\"\x04r\x02\x10\x01*\x04r\x02\x18@\xe2\x9c\x04\x12\n" +
+	"\x10Arbitrary labelsR\x06labels\x129\n" +
+	"\x04name\x18\x04 \x01(\tB%\xbaH\x04r\x02\x10\x01\xe2\x9c\x04\x1a\n" +
+	"\x18The name of the resourceR\x04name\x1a9\n" +
+	"\vLabelsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"3\n" +
+	"\x0eCollectionItem\x12!\n" +
+	"\x02id\x18\x01 \x01(\tB\x11\xe2\x9c\x04\r\n" +
+	"\vThe item idR\x02id\"\xfc\x01\n" +
+	"\x19NullableCollectionRequest\x126\n" +
+	"\x04tags\x18\x01 \x03(\tB\"\xe2\x9c\x04\x1e\n" +
+	"\x1cTags applied to the resourceR\x04tags\x12d\n" +
+	"\x06labels\x18\x02 \x03(\v24.validation.v1.NullableCollectionRequest.LabelsEntryB\x16\xe2\x9c\x04\x12\n" +
+	"\x10Arbitrary labelsR\x06labels\x1a9\n" +
+	"\vLabelsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01:\x06\xea\x9c\x04\x02\b\x01B\xb4\x01\n" +
 	"\x11com.validation.v1B\x0fValidationProtoP\x01Z9github.com/ductone/protoc-gen-mcpgw/example/validation/v1\xa2\x02\x03VXX\xaa\x02\rValidation.V1\xca\x02\rValidation\\V1\xe2\x02\x19Validation\\V1\\GPBMetadata\xea\x02\x0eValidation::V1b\x06proto3"
 
 var (
@@ -192,17 +391,25 @@ func file_validation_v1_validation_proto_rawDescGZIP() []byte {
 	return file_validation_v1_validation_proto_rawDescData
 }
 
-var file_validation_v1_validation_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_validation_v1_validation_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_validation_v1_validation_proto_goTypes = []any{
-	(*ModernValidateRequest)(nil), // 0: validation.v1.ModernValidateRequest
-	(*LegacyPGVRequest)(nil),      // 1: validation.v1.LegacyPGVRequest
+	(*ModernValidateRequest)(nil),     // 0: validation.v1.ModernValidateRequest
+	(*LegacyPGVRequest)(nil),          // 1: validation.v1.LegacyPGVRequest
+	(*CollectionOptionsRequest)(nil),  // 2: validation.v1.CollectionOptionsRequest
+	(*CollectionItem)(nil),            // 3: validation.v1.CollectionItem
+	(*NullableCollectionRequest)(nil), // 4: validation.v1.NullableCollectionRequest
+	nil,                               // 5: validation.v1.CollectionOptionsRequest.LabelsEntry
+	nil,                               // 6: validation.v1.NullableCollectionRequest.LabelsEntry
 }
 var file_validation_v1_validation_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	3, // 0: validation.v1.CollectionOptionsRequest.items:type_name -> validation.v1.CollectionItem
+	5, // 1: validation.v1.CollectionOptionsRequest.labels:type_name -> validation.v1.CollectionOptionsRequest.LabelsEntry
+	6, // 2: validation.v1.NullableCollectionRequest.labels:type_name -> validation.v1.NullableCollectionRequest.LabelsEntry
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_validation_v1_validation_proto_init() }
@@ -216,7 +423,7 @@ func file_validation_v1_validation_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_validation_v1_validation_proto_rawDesc), len(file_validation_v1_validation_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
