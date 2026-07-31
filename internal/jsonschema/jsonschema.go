@@ -208,6 +208,8 @@ func schemaForField(fd protoreflect.FieldDescriptor, visited map[protoreflect.Fu
 	if fd.Kind() == protoreflect.MessageKind {
 		wktSchema, isWKT := schemaForWellKnownType(fd.Message(), allowNulls)
 		if isWKT {
+			applyCustomFieldOptions(fd, wktSchema)
+			applyValidationRules(fd, wktSchema)
 			return wktSchema, nil
 		}
 	}
@@ -331,6 +333,12 @@ func schemaForRepeatedField(fd protoreflect.FieldDescriptor, visited map[protore
 		schema["type"] = []string{"array", "null"}
 	}
 
+	// The description documents the field, so it belongs on the array rather
+	// than on a single element. Nullability is already handled above; repeated
+	// fields have no presence, so applyNullability would be a no-op here.
+	applyCustomFieldOptions(fd, schema)
+	applyRepeatedFieldRules(fd, schema, itemSchema)
+
 	return schema, nil
 }
 
@@ -348,6 +356,9 @@ func schemaForMapField(fd protoreflect.FieldDescriptor, visited map[protoreflect
 		"type":                 "object",
 		"additionalProperties": valueSchema,
 	}
+
+	applyCustomFieldOptions(fd, schema)
+	applyMapFieldRules(fd, schema, valueSchema)
 
 	return schema, nil
 }
@@ -538,62 +549,117 @@ func applyCustomFieldOptions(fd protoreflect.FieldDescriptor, schema map[string]
 	}
 }
 
-// applyValidationRules applies buf.validate rules if present
-func applyValidationRules(fd protoreflect.FieldDescriptor, schema map[string]any) {
+// fieldRules returns the buf.validate.field rules set on a field, or nil.
+func fieldRules(fd protoreflect.FieldDescriptor) *validate.FieldRules {
 	opts := fd.Options()
 	if opts == nil {
-		return
+		return nil
 	}
 
 	// Check if our extension is registered
 	if !proto.HasExtension(opts, validate.E_Field) {
+		return nil
+	}
+
+	rules, ok := proto.GetExtension(opts, validate.E_Field).(*validate.FieldRules)
+	if !ok {
+		return nil
+	}
+
+	return rules
+}
+
+// applyValidationRules applies buf.validate rules for a singular field. The
+// required rule is not handled here; isFieldRequired drives the parent's
+// "required" array.
+func applyValidationRules(fd protoreflect.FieldDescriptor, schema map[string]any) {
+	rules := fieldRules(fd)
+	if rules == nil {
 		return
 	}
 
-	// Extract our field options
-	fieldOpts, ok := proto.GetExtension(opts, validate.E_Field).(*validate.FieldRules)
-	if !ok || fieldOpts == nil {
-		return
-	}
+	applyKindValidationRules(fd.Kind(), rules, schema)
+}
 
-	// Apply required constraint if set
-	if fieldOpts.GetRequired() {
-		// This is handled by isFieldRequired, but we leave it here for completeness
-		// schema will be marked as required in the parent object's required array
-	}
-
-	// Process validation rules based on field type
-	switch fd.Kind() {
+// applyKindValidationRules maps the type-specific buf.validate rules for a
+// single value of the given kind onto schema.
+func applyKindValidationRules(kind protoreflect.Kind, rules *validate.FieldRules, schema map[string]any) {
+	switch kind {
 	case protoreflect.StringKind:
-		applyStringValidationRules(fieldOpts, schema)
+		applyStringValidationRules(rules, schema)
 	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
-		applyInt32ValidationRules(fieldOpts, schema)
+		applyInt32ValidationRules(rules, schema)
 	case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
-		applyInt64ValidationRules(fieldOpts, schema)
+		applyInt64ValidationRules(rules, schema)
 	case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
-		applyUint32ValidationRules(fieldOpts, schema)
+		applyUint32ValidationRules(rules, schema)
 	case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
-		applyUint64ValidationRules(fieldOpts, schema)
+		applyUint64ValidationRules(rules, schema)
 	case protoreflect.FloatKind:
-		applyFloatValidationRules(fieldOpts, schema)
+		applyFloatValidationRules(rules, schema)
 	case protoreflect.DoubleKind:
-		applyDoubleValidationRules(fieldOpts, schema)
+		applyDoubleValidationRules(rules, schema)
 	case protoreflect.BytesKind:
-		applyBytesValidationRules(fieldOpts, schema)
+		applyBytesValidationRules(rules, schema)
 	case protoreflect.BoolKind:
-		applyBoolValidationRules(fieldOpts, schema)
+		applyBoolValidationRules(rules, schema)
 	case protoreflect.EnumKind:
-		applyEnumValidationRules(fieldOpts, schema)
+		applyEnumValidationRules(rules, schema)
+	}
+}
+
+// applyRepeatedFieldRules splits a repeated field's buf.validate rules by the
+// level each one constrains: min_items, max_items and unique describe the list
+// as a whole, while repeated.items describes a single element and so must land
+// on the item schema. Applying an element rule such as min_len to the array
+// would produce a constraint that is silently never satisfiable.
+func applyRepeatedFieldRules(fd protoreflect.FieldDescriptor, arraySchema map[string]any, itemSchema map[string]any) {
+	rules := fieldRules(fd)
+	if rules == nil {
+		return
 	}
 
-	// If this is a repeated field, apply repeated rules
-	if fd.IsList() && !fd.IsMap() {
-		applyRepeatedValidationRules(fieldOpts, schema)
+	repeatedRules := rules.GetRepeated()
+	if repeatedRules == nil {
+		return
 	}
 
-	// If this is a map field, apply map rules
-	if fd.IsMap() {
-		applyMapValidationRules(fieldOpts, schema)
+	applyRepeatedValidationRules(rules, arraySchema)
+
+	if items := repeatedRules.GetItems(); items != nil {
+		applyKindValidationRules(fd.Kind(), items, itemSchema)
+	}
+}
+
+// applyMapFieldRules splits a map field's buf.validate rules by level, the same
+// way applyRepeatedFieldRules does: min_pairs and max_pairs describe the object,
+// while map.keys and map.values describe a single key or value.
+func applyMapFieldRules(fd protoreflect.FieldDescriptor, objectSchema map[string]any, valueSchema map[string]any) {
+	rules := fieldRules(fd)
+	if rules == nil {
+		return
+	}
+
+	mapRules := rules.GetMap()
+	if mapRules == nil {
+		return
+	}
+
+	applyMapValidationRules(rules, objectSchema)
+
+	// Proto JSON renders every map key as a JSON property name, so key rules are
+	// only faithfully expressible for string keys; numeric bounds on a stringified
+	// key would not mean what the rule says.
+	if keys := mapRules.GetKeys(); keys != nil && fd.MapKey().Kind() == protoreflect.StringKind {
+		keySchema := map[string]any{"type": "string"}
+		applyKindValidationRules(protoreflect.StringKind, keys, keySchema)
+		if len(keySchema) > 1 {
+			objectSchema["propertyNames"] = keySchema
+		}
+	}
+
+	if values := mapRules.GetValues(); values != nil {
+		applyKindValidationRules(fd.MapValue().Kind(), values, valueSchema)
 	}
 }
 
