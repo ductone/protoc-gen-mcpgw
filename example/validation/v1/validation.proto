@@ -35,6 +35,48 @@ message LegacyPGVRequest {
   repeated string tags = 5 [(validate.rules).repeated.min_items = 1];
 }
 
+// LegacyPGVBoundsRequest exercises the legacy protoc-gen-validate bounds that
+// have a JSON Schema equivalent. Kept separate from LegacyPGVRequest so adding
+// a rule that rejects the zero value cannot perturb the required-array tests.
+message LegacyPGVBoundsRequest {
+  // The shape that sent an out-of-range page size to a real MCP server: the
+  // ceiling lived only in the description until validate.rules was mapped.
+  int32 page_size = 1 [
+    (mcpgw.v1.field) = {description: "Max results per page (default 25, max 100)."},
+    (validate.rules).int32 = {
+      gte: 0
+      lte: 100
+    }
+  ];
+
+  string query = 2 [(validate.rules).string.max_len = 1024];
+
+  // Exclusive bounds map to exclusiveMinimum / exclusiveMaximum.
+  int32 exclusive_bound = 3 [(validate.rules).int32 = {
+    gt: 5
+    lt: 50
+  }];
+
+  string name = 4 [(validate.rules).string = {
+    min_len: 3
+    pattern: "^[a-z]+$"
+  }];
+
+  // An exact length, which JSON Schema expresses as an equal min/max pair.
+  string code = 5 [(validate.rules).string.len = 8];
+
+  // Array-level and item-level rules must land on their own schemas.
+  repeated string tags = 6 [(validate.rules).repeated = {
+    max_items: 10
+    items: {
+      string: {max_len: 32}
+    }
+  }];
+
+  // No rules: must stay unconstrained.
+  string plain = 7;
+}
+
 // CollectionOptionsRequest exercises field options and validation rules on
 // repeated and map fields, whose rules are described at two levels: the
 // collection itself and each of its elements.

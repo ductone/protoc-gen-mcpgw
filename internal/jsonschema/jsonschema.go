@@ -549,7 +549,12 @@ func applyCustomFieldOptions(fd protoreflect.FieldDescriptor, schema map[string]
 	}
 }
 
-// fieldRules returns the buf.validate.field rules set on a field, or nil.
+// fieldRules returns the validation rules set on a field, or nil. Both
+// validation dialects are read: modern buf.validate (buf.validate.field) and
+// legacy protoc-gen-validate (validate.rules), the latter translated to the
+// modern shape so callers map one type. A schema generated for a PGV-annotated
+// proto would otherwise carry no bounds at all, leaving an MCP client to
+// discover a limit by tripping a runtime InvalidArgument.
 func fieldRules(fd protoreflect.FieldDescriptor) *validate.FieldRules {
 	opts := fd.Options()
 	if opts == nil {
@@ -557,16 +562,14 @@ func fieldRules(fd protoreflect.FieldDescriptor) *validate.FieldRules {
 	}
 
 	// Check if our extension is registered
-	if !proto.HasExtension(opts, validate.E_Field) {
+	if proto.HasExtension(opts, validate.E_Field) {
+		if rules, ok := proto.GetExtension(opts, validate.E_Field).(*validate.FieldRules); ok {
+			return rules
+		}
 		return nil
 	}
 
-	rules, ok := proto.GetExtension(opts, validate.E_Field).(*validate.FieldRules)
-	if !ok {
-		return nil
-	}
-
-	return rules
+	return legacyPGVFieldRules(fd)
 }
 
 // applyValidationRules applies buf.validate rules for a singular field. The
@@ -743,24 +746,20 @@ func applyInt32ValidationRules(fieldOpts *validate.FieldRules, schema map[string
 		schema["const"] = intRules.GetConst()
 	}
 
-	// Handle minimum (gte - greater than or equal)
-	if intRules.GetGte() != 0 {
-		schema["minimum"] = intRules.GetGte()
+	// The bound rules are oneofs, so presence is the set case and not a
+	// non-zero value; testing the value would drop an explicit gte:0 floor.
+	switch bound := intRules.GetGreaterThan().(type) {
+	case *validate.Int32Rules_Gte:
+		schema["minimum"] = bound.Gte
+	case *validate.Int32Rules_Gt:
+		schema["exclusiveMinimum"] = bound.Gt
 	}
 
-	// Handle maximum (lte - less than or equal)
-	if intRules.GetLte() != 0 {
-		schema["maximum"] = intRules.GetLte()
-	}
-
-	// Handle exclusiveMinimum (gt - greater than)
-	if intRules.GetGt() != 0 {
-		schema["exclusiveMinimum"] = intRules.GetGt()
-	}
-
-	// Handle exclusiveMaximum (lt - less than)
-	if intRules.GetLt() != 0 {
-		schema["exclusiveMaximum"] = intRules.GetLt()
+	switch bound := intRules.GetLessThan().(type) {
+	case *validate.Int32Rules_Lte:
+		schema["maximum"] = bound.Lte
+	case *validate.Int32Rules_Lt:
+		schema["exclusiveMaximum"] = bound.Lt
 	}
 
 	// Handle in (enum)
@@ -781,24 +780,20 @@ func applyInt64ValidationRules(fieldOpts *validate.FieldRules, schema map[string
 		schema["const"] = intRules.GetConst()
 	}
 
-	// Handle minimum (gte - greater than or equal)
-	if intRules.GetGte() != 0 {
-		schema["minimum"] = intRules.GetGte()
+	// The bound rules are oneofs, so presence is the set case and not a
+	// non-zero value; testing the value would drop an explicit gte:0 floor.
+	switch bound := intRules.GetGreaterThan().(type) {
+	case *validate.Int64Rules_Gte:
+		schema["minimum"] = bound.Gte
+	case *validate.Int64Rules_Gt:
+		schema["exclusiveMinimum"] = bound.Gt
 	}
 
-	// Handle maximum (lte - less than or equal)
-	if intRules.GetLte() != 0 {
-		schema["maximum"] = intRules.GetLte()
-	}
-
-	// Handle exclusiveMinimum (gt - greater than)
-	if intRules.GetGt() != 0 {
-		schema["exclusiveMinimum"] = intRules.GetGt()
-	}
-
-	// Handle exclusiveMaximum (lt - less than)
-	if intRules.GetLt() != 0 {
-		schema["exclusiveMaximum"] = intRules.GetLt()
+	switch bound := intRules.GetLessThan().(type) {
+	case *validate.Int64Rules_Lte:
+		schema["maximum"] = bound.Lte
+	case *validate.Int64Rules_Lt:
+		schema["exclusiveMaximum"] = bound.Lt
 	}
 
 	// Handle in (enum)
@@ -819,24 +814,20 @@ func applyUint32ValidationRules(fieldOpts *validate.FieldRules, schema map[strin
 		schema["const"] = uintRules.GetConst()
 	}
 
-	// Handle minimum (gte - greater than or equal)
-	if uintRules.GetGte() != 0 {
-		schema["minimum"] = uintRules.GetGte()
+	// The bound rules are oneofs, so presence is the set case and not a
+	// non-zero value; testing the value would drop an explicit gte:0 floor.
+	switch bound := uintRules.GetGreaterThan().(type) {
+	case *validate.UInt32Rules_Gte:
+		schema["minimum"] = bound.Gte
+	case *validate.UInt32Rules_Gt:
+		schema["exclusiveMinimum"] = bound.Gt
 	}
 
-	// Handle maximum (lte - less than or equal)
-	if uintRules.GetLte() != 0 {
-		schema["maximum"] = uintRules.GetLte()
-	}
-
-	// Handle exclusiveMinimum (gt - greater than)
-	if uintRules.GetGt() != 0 {
-		schema["exclusiveMinimum"] = uintRules.GetGt()
-	}
-
-	// Handle exclusiveMaximum (lt - less than)
-	if uintRules.GetLt() != 0 {
-		schema["exclusiveMaximum"] = uintRules.GetLt()
+	switch bound := uintRules.GetLessThan().(type) {
+	case *validate.UInt32Rules_Lte:
+		schema["maximum"] = bound.Lte
+	case *validate.UInt32Rules_Lt:
+		schema["exclusiveMaximum"] = bound.Lt
 	}
 
 	// Handle in (enum)
@@ -857,24 +848,20 @@ func applyUint64ValidationRules(fieldOpts *validate.FieldRules, schema map[strin
 		schema["const"] = uintRules.GetConst()
 	}
 
-	// Handle minimum (gte - greater than or equal)
-	if uintRules.GetGte() != 0 {
-		schema["minimum"] = uintRules.GetGte()
+	// The bound rules are oneofs, so presence is the set case and not a
+	// non-zero value; testing the value would drop an explicit gte:0 floor.
+	switch bound := uintRules.GetGreaterThan().(type) {
+	case *validate.UInt64Rules_Gte:
+		schema["minimum"] = bound.Gte
+	case *validate.UInt64Rules_Gt:
+		schema["exclusiveMinimum"] = bound.Gt
 	}
 
-	// Handle maximum (lte - less than or equal)
-	if uintRules.GetLte() != 0 {
-		schema["maximum"] = uintRules.GetLte()
-	}
-
-	// Handle exclusiveMinimum (gt - greater than)
-	if uintRules.GetGt() != 0 {
-		schema["exclusiveMinimum"] = uintRules.GetGt()
-	}
-
-	// Handle exclusiveMaximum (lt - less than)
-	if uintRules.GetLt() != 0 {
-		schema["exclusiveMaximum"] = uintRules.GetLt()
+	switch bound := uintRules.GetLessThan().(type) {
+	case *validate.UInt64Rules_Lte:
+		schema["maximum"] = bound.Lte
+	case *validate.UInt64Rules_Lt:
+		schema["exclusiveMaximum"] = bound.Lt
 	}
 
 	// Handle in (enum)
@@ -895,24 +882,20 @@ func applyFloatValidationRules(fieldOpts *validate.FieldRules, schema map[string
 		schema["const"] = floatRules.GetConst()
 	}
 
-	// Handle minimum (gte - greater than or equal)
-	if floatRules.GetGte() != 0 {
-		schema["minimum"] = floatRules.GetGte()
+	// The bound rules are oneofs, so presence is the set case and not a
+	// non-zero value; testing the value would drop an explicit gte:0 floor.
+	switch bound := floatRules.GetGreaterThan().(type) {
+	case *validate.FloatRules_Gte:
+		schema["minimum"] = bound.Gte
+	case *validate.FloatRules_Gt:
+		schema["exclusiveMinimum"] = bound.Gt
 	}
 
-	// Handle maximum (lte - less than or equal)
-	if floatRules.GetLte() != 0 {
-		schema["maximum"] = floatRules.GetLte()
-	}
-
-	// Handle exclusiveMinimum (gt - greater than)
-	if floatRules.GetGt() != 0 {
-		schema["exclusiveMinimum"] = floatRules.GetGt()
-	}
-
-	// Handle exclusiveMaximum (lt - less than)
-	if floatRules.GetLt() != 0 {
-		schema["exclusiveMaximum"] = floatRules.GetLt()
+	switch bound := floatRules.GetLessThan().(type) {
+	case *validate.FloatRules_Lte:
+		schema["maximum"] = bound.Lte
+	case *validate.FloatRules_Lt:
+		schema["exclusiveMaximum"] = bound.Lt
 	}
 
 	// Handle in (enum)
@@ -933,24 +916,20 @@ func applyDoubleValidationRules(fieldOpts *validate.FieldRules, schema map[strin
 		schema["const"] = doubleRules.GetConst()
 	}
 
-	// Handle minimum (gte - greater than or equal)
-	if doubleRules.GetGte() != 0 {
-		schema["minimum"] = doubleRules.GetGte()
+	// The bound rules are oneofs, so presence is the set case and not a
+	// non-zero value; testing the value would drop an explicit gte:0 floor.
+	switch bound := doubleRules.GetGreaterThan().(type) {
+	case *validate.DoubleRules_Gte:
+		schema["minimum"] = bound.Gte
+	case *validate.DoubleRules_Gt:
+		schema["exclusiveMinimum"] = bound.Gt
 	}
 
-	// Handle maximum (lte - less than or equal)
-	if doubleRules.GetLte() != 0 {
-		schema["maximum"] = doubleRules.GetLte()
-	}
-
-	// Handle exclusiveMinimum (gt - greater than)
-	if doubleRules.GetGt() != 0 {
-		schema["exclusiveMinimum"] = doubleRules.GetGt()
-	}
-
-	// Handle exclusiveMaximum (lt - less than)
-	if doubleRules.GetLt() != 0 {
-		schema["exclusiveMaximum"] = doubleRules.GetLt()
+	switch bound := doubleRules.GetLessThan().(type) {
+	case *validate.DoubleRules_Lte:
+		schema["maximum"] = bound.Lte
+	case *validate.DoubleRules_Lt:
+		schema["exclusiveMaximum"] = bound.Lt
 	}
 
 	// Handle in (enum)
