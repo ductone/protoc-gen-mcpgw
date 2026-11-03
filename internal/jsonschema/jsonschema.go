@@ -56,7 +56,7 @@ package jsonschema
 
 import (
 	"fmt"
-	"regexp"
+	"slices"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -578,13 +578,14 @@ func applyValidationRules(fd protoreflect.FieldDescriptor, schema map[string]any
 		return
 	}
 
-	applyKindValidationRules(fd.Kind(), rules, schema)
+	applyKindValidationRules(fd, rules, schema)
 }
 
 // applyKindValidationRules maps the type-specific buf.validate rules for a
-// single value of the given kind onto schema.
-func applyKindValidationRules(kind protoreflect.Kind, rules *validate.FieldRules, schema map[string]any) {
-	switch kind {
+// single value described by fd (a field, or a map field's key or value) onto
+// schema.
+func applyKindValidationRules(fd protoreflect.FieldDescriptor, rules *validate.FieldRules, schema map[string]any) {
+	switch fd.Kind() {
 	case protoreflect.StringKind:
 		applyStringValidationRules(rules, schema)
 	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
@@ -604,7 +605,7 @@ func applyKindValidationRules(kind protoreflect.Kind, rules *validate.FieldRules
 	case protoreflect.BoolKind:
 		applyBoolValidationRules(rules, schema)
 	case protoreflect.EnumKind:
-		applyEnumValidationRules(rules, schema)
+		applyEnumValidationRules(fd.Enum(), rules, schema)
 	}
 }
 
@@ -627,7 +628,7 @@ func applyRepeatedFieldRules(fd protoreflect.FieldDescriptor, arraySchema map[st
 	applyRepeatedValidationRules(rules, arraySchema)
 
 	if items := repeatedRules.GetItems(); items != nil {
-		applyKindValidationRules(fd.Kind(), items, itemSchema)
+		applyKindValidationRules(fd, items, itemSchema)
 	}
 }
 
@@ -652,14 +653,14 @@ func applyMapFieldRules(fd protoreflect.FieldDescriptor, objectSchema map[string
 	// key would not mean what the rule says.
 	if keys := mapRules.GetKeys(); keys != nil && fd.MapKey().Kind() == protoreflect.StringKind {
 		keySchema := map[string]any{"type": "string"}
-		applyKindValidationRules(protoreflect.StringKind, keys, keySchema)
+		applyKindValidationRules(fd.MapKey(), keys, keySchema)
 		if len(keySchema) > 1 {
 			objectSchema["propertyNames"] = keySchema
 		}
 	}
 
 	if values := mapRules.GetValues(); values != nil {
-		applyKindValidationRules(fd.MapValue().Kind(), values, valueSchema)
+		applyKindValidationRules(fd.MapValue(), values, valueSchema)
 	}
 }
 
@@ -682,7 +683,9 @@ func applyStringValidationRules(fieldOpts *validate.FieldRules, schema map[strin
 
 	// Handle pattern
 	if stringRules.Pattern != nil {
-		schema["pattern"] = stringRules.GetPattern()
+		if p, ok := ecmaPattern(stringRules.GetPattern()); ok {
+			addPattern(schema, p)
+		}
 	}
 
 	// Handle email format
@@ -710,18 +713,17 @@ func applyStringValidationRules(fieldOpts *validate.FieldRules, schema map[strin
 		schema["enum"] = stringRules.GetIn()
 	}
 
-	// Handle prefix
+	// Handle prefix and suffix. Patterns are unanchored, so no ".*" is needed
+	// (and "." would not match a newline).
 	if stringRules.Prefix != nil {
-		// JSON Schema doesn't have prefix directly, we could use pattern
-		prefix := stringRules.GetPrefix()
-		schema["pattern"] = fmt.Sprintf("^%s.*", regexp.QuoteMeta(prefix))
+		if p, ok := ecmaQuote(stringRules.GetPrefix()); ok {
+			addPattern(schema, "^"+p)
+		}
 	}
-
-	// Handle suffix
 	if stringRules.Suffix != nil {
-		// JSON Schema doesn't have suffix directly, we could use pattern
-		suffix := stringRules.GetSuffix()
-		schema["pattern"] = fmt.Sprintf(".*%s$", regexp.QuoteMeta(suffix))
+		if p, ok := ecmaQuote(stringRules.GetSuffix()); ok {
+			addPattern(schema, p+"$")
+		}
 	}
 
 	// Handle contains
@@ -1001,31 +1003,50 @@ func applyBoolValidationRules(fieldOpts *validate.FieldRules, schema map[string]
 }
 
 // applyEnumValidationRules applies enum validation rules to a schema
-func applyEnumValidationRules(fieldOpts *validate.FieldRules, schema map[string]any) {
+func applyEnumValidationRules(ed protoreflect.EnumDescriptor, fieldOpts *validate.FieldRules, schema map[string]any) {
 	enumRules := fieldOpts.GetEnum()
 	if enumRules == nil {
 		return
 	}
 
-	// Handle const
+	// Enum rules hold numbers, but the schema lists value names (proto JSON's
+	// canonical form), so every rule is translated through the descriptor.
+	// defined_only needs nothing: the schema already lists only defined values.
+	values := ed.Values()
 	if enumRules.Const != nil {
-		schema["const"] = enumRules.GetConst()
+		if v := values.ByNumber(protoreflect.EnumNumber(enumRules.GetConst())); v != nil {
+			schema["const"] = string(v.Name())
+		}
 	}
 
-	// Handle defined_only
-	if enumRules.DefinedOnly != nil && enumRules.GetDefinedOnly() {
-		// Already handled by the enum schema generator
+	in := enumRules.GetIn()
+	notIn := enumRules.GetNotIn()
+	if len(in) == 0 && len(notIn) == 0 {
+		return
 	}
+	allowed := make([]string, 0, values.Len())
+	for i := range values.Len() {
+		v := values.Get(i)
+		if len(in) > 0 && !slices.Contains(in, int32(v.Number())) {
+			continue
+		}
+		if slices.Contains(notIn, int32(v.Number())) {
+			continue
+		}
+		allowed = append(allowed, string(v.Name()))
+	}
+	schema["enum"] = allowed
+}
 
-	// Handle in
-	if len(enumRules.GetIn()) > 0 {
-		schema["enum"] = enumRules.GetIn()
+// addPattern adds an ECMA-262 pattern to schema. JSON Schema allows a single
+// "pattern" per schema, so further patterns are ANDed in through allOf.
+func addPattern(schema map[string]any, pattern string) {
+	if _, ok := schema["pattern"]; !ok {
+		schema["pattern"] = pattern
+		return
 	}
-
-	// Handle not_in
-	if len(enumRules.GetNotIn()) > 0 {
-		// Not directly mappable to JSON Schema without more complex schema
-	}
+	allOf, _ := schema["allOf"].([]any)
+	schema["allOf"] = append(allOf, map[string]any{"pattern": pattern})
 }
 
 // applyRepeatedValidationRules applies validation rules for repeated fields
