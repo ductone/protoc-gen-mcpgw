@@ -92,3 +92,44 @@ message NullableCollectionRequest {
   repeated string tags = 1 [(mcpgw.v1.field) = {description: "Tags applied to the resource"}];
   map<string, string> labels = 2 [(mcpgw.v1.field) = {description: "Arbitrary labels"}];
 }
+
+enum Shade {
+  SHADE_UNSPECIFIED = 0;
+  SHADE_LIGHT = 1;
+  SHADE_MEDIUM = 2;
+  SHADE_DARK = 3;
+}
+
+// EnumRulesRequest exercises buf.validate enum rules, which are expressed as
+// enum numbers but must appear in the schema as value names.
+message EnumRulesRequest {
+  Shade allowed = 1 [(buf.validate.field).enum = {
+    in: [
+      1,
+      3
+    ]
+  }];
+  Shade excluded = 2 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+  Shade fixed = 3 [(buf.validate.field).enum.const = 2];
+  repeated Shade allowed_list = 4 [(buf.validate.field).repeated.items.enum = {
+    in: [
+      1,
+      2
+    ]
+  }];
+}
+
+// PatternRulesRequest exercises the RE2 to ECMA-262 pattern translation.
+message PatternRulesRequest {
+  string dotted = 1 [(buf.validate.field).string.pattern = "^a.b$"];
+  string folded = 2 [(buf.validate.field).string.pattern = "^(?i)ab$"];
+  string multiline = 3 [(buf.validate.field).string.pattern = "(?m)^a$"];
+  string prefixed = 4 [(buf.validate.field).string = {
+    pattern: "^[a-z]+$"
+    prefix: "a.b"
+    suffix: "z"
+  }];
+}
