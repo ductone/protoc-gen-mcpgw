@@ -1,4 +1,4 @@
-// Copyright 2023-2024 Buf Technologies, Inc.
+// Copyright 2023-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import (
 	"sync"
 
 	pvcel "buf.build/go/protovalidate/cel"
-	"github.com/google/cel-go/cel"
+	"cel.dev/cel-go/cel"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
@@ -64,7 +64,16 @@ func New(options ...ValidatorOption) (Validator, error) {
 		opt.applyToValidator(&cfg)
 	}
 
-	env, err := cel.NewEnv(cel.Lib(pvcel.NewLibrary()))
+	reg, err := newRegistry()
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to construct CEL type registry: %w", err)
+	}
+	env, err := cel.NewEnv(
+		cel.CustomTypeProvider(reg),
+		cel.CustomTypeAdapter(reg),
+		cel.Lib(pvcel.NewLibrary()),
+	)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"failed to construct CEL environment: %w", err)
@@ -75,20 +84,23 @@ func New(options ...ValidatorOption) (Validator, error) {
 		cfg.disableLazy,
 		cfg.extensionTypeResolver,
 		cfg.allowUnknownFields,
+		cfg.disableNativeRules,
 		cfg.desc...,
 	)
 
 	return &validator{
-		failFast: cfg.failFast,
-		builder:  bldr,
-		nowFn:    cfg.nowFn,
+		builder: bldr,
+		cfg: &validationConfig{
+			failFast: cfg.failFast,
+			filter:   nopFilter{},
+			nowFn:    cfg.nowFn,
+		},
 	}, nil
 }
 
 type validator struct {
-	builder  *builder
-	failFast bool
-	nowFn    func() *timestamppb.Timestamp
+	builder *builder
+	cfg     *validationConfig
 }
 
 func (v *validator) Validate(
@@ -98,17 +110,16 @@ func (v *validator) Validate(
 	if msg == nil {
 		return nil
 	}
-	cfg := validationConfig{
-		failFast: v.failFast,
-		filter:   nopFilter{},
-		nowFn:    v.nowFn,
-	}
-	for _, opt := range options {
-		opt.applyToValidation(&cfg)
+	cfg := v.cfg
+	if len(options) > 0 {
+		cfg = cfg.clone()
+		for _, opt := range options {
+			opt.applyToValidation(cfg)
+		}
 	}
 	refl := msg.ProtoReflect()
 	eval := v.builder.Load(refl.Descriptor())
-	err := eval.EvaluateMessage(refl, &cfg)
+	err := eval.EvaluateMessage(refl, cfg)
 	finalizeViolationPaths(err)
 	return err
 }
@@ -132,12 +143,18 @@ type config struct {
 	extensionTypeResolver protoregistry.ExtensionTypeResolver
 	allowUnknownFields    bool
 	nowFn                 func() *timestamppb.Timestamp
+	disableNativeRules    bool
 }
 
 type validationConfig struct {
 	failFast bool
 	filter   Filter
 	nowFn    func() *timestamppb.Timestamp
+}
+
+func (cfg *validationConfig) clone() *validationConfig {
+	clonedCfg := *cfg
+	return &clonedCfg
 }
 
 type globalValidator struct{}

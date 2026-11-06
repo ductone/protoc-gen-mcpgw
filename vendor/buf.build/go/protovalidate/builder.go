@@ -1,4 +1,4 @@
-// Copyright 2023-2024 Buf Technologies, Inc.
+// Copyright 2023-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 package protovalidate
 
 import (
+	"cmp"
 	"fmt"
 	"maps"
 	"slices"
@@ -23,7 +24,7 @@ import (
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	pvcel "buf.build/go/protovalidate/cel"
-	"github.com/google/cel-go/cel"
+	"cel.dev/cel-go/cel"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
@@ -32,8 +33,10 @@ import (
 
 //nolint:gochecknoglobals
 var (
-	celRuleDescriptor = (&validate.FieldRules{}).ProtoReflect().Descriptor().Fields().ByName("cel")
-	celRuleField      = fieldPathElement(celRuleDescriptor)
+	celExpressionDescriptor = (&validate.FieldRules{}).ProtoReflect().Descriptor().Fields().ByName("cel_expression")
+	celExpressionField      = fieldPathElement(celExpressionDescriptor)
+	celRuleDescriptor       = (&validate.FieldRules{}).ProtoReflect().Descriptor().Fields().ByName("cel")
+	celRuleField            = fieldPathElement(celRuleDescriptor)
 )
 
 // builder is a build-through cache of message evaluators keyed off the provided
@@ -46,6 +49,7 @@ type builder struct {
 	extensionTypeResolver protoregistry.ExtensionTypeResolver
 	allowUnknownFields    bool
 	Load                  func(desc protoreflect.MessageDescriptor) messageEvaluator
+	disableNativeRules    bool
 }
 
 // newBuilder initializes a new Builder.
@@ -54,6 +58,7 @@ func newBuilder(
 	disableLazy bool,
 	extensionTypeResolver protoregistry.ExtensionTypeResolver,
 	allowUnknownFields bool,
+	disableNativeRules bool,
 	seedDesc ...protoreflect.MessageDescriptor,
 ) *builder {
 	bldr := &builder{
@@ -61,6 +66,7 @@ func newBuilder(
 		rules:                 newCache(),
 		extensionTypeResolver: extensionTypeResolver,
 		allowUnknownFields:    allowUnknownFields,
+		disableNativeRules:    disableNativeRules,
 	}
 
 	if disableLazy {
@@ -124,9 +130,6 @@ func (bldr *builder) buildMessage(
 	cache messageCache,
 ) {
 	msgRules, _ := ResolveMessageRules(desc)
-	if msgRules.GetDisabled() {
-		return
-	}
 
 	steps := []func(
 		desc protoreflect.MessageDescriptor,
@@ -152,7 +155,7 @@ func (bldr *builder) processMessageExpressions(
 	_ messageCache,
 ) {
 	exprs := expressions{
-		Rules: msgRules.GetCel(),
+		Rules: append(expressionsToRules(msgRules.GetCelExpression()), msgRules.GetCel()...),
 	}
 	compiledExprs, err := compile(
 		exprs,
@@ -165,9 +168,7 @@ func (bldr *builder) processMessageExpressions(
 		return
 	}
 
-	msgEval.Append(celPrograms{
-		programSet: compiledExprs,
-	})
+	msgEval.Append(celPrograms{programSet: compiledExprs})
 }
 
 func (bldr *builder) processMessageOneofRules(
@@ -254,12 +255,9 @@ func (bldr *builder) buildField(
 	msgRules *validate.MessageRules,
 	cache messageCache,
 ) (field, error) {
-	if !fieldRules.HasIgnore() && isPartOfMessageOneof(msgRules, fieldDescriptor) {
+	if fieldRules != nil && !fieldRules.HasIgnore() && isPartOfMessageOneof(msgRules, fieldDescriptor) {
 		fieldRules = proto.CloneOf(fieldRules)
-		if fieldRules == nil {
-			fieldRules = &validate.FieldRules{}
-		}
-		fieldRules.SetIgnore(validate.Ignore_IGNORE_IF_UNPOPULATED)
+		fieldRules.SetIgnore(validate.Ignore_IGNORE_IF_ZERO_VALUE)
 	}
 	fld := field{
 		Value: value{
@@ -268,9 +266,6 @@ func (bldr *builder) buildField(
 		HasPresence: fieldDescriptor.HasPresence(),
 		Required:    fieldRules.GetRequired(),
 		Ignore:      fieldRules.GetIgnore(),
-	}
-	if fld.shouldIgnoreDefault() {
-		fld.Zero = bldr.zeroValue(fieldDescriptor, false)
 	}
 	err := bldr.buildValue(fieldDescriptor, fieldRules, &fld.Value, cache)
 	return fld, err
@@ -332,33 +327,54 @@ func (bldr *builder) processFieldExpressions(
 	eval *value,
 	_ messageCache,
 ) error {
-	exprs := expressions{
-		Rules: fieldRules.GetCel(),
-	}
-
 	celTyp := pvcel.ProtoFieldToType(fieldDesc, false, eval.NestedRule != nil)
 	opts := append(
 		pvcel.RequiredEnvOptions(fieldDesc),
 		cel.Variable("this", celTyp),
 	)
-	compiledExpressions, err := compile(exprs, bldr.env, opts...)
+	compileWithPath := func(exprs expressions, fieldPathElement *validate.FieldPathElement, descriptor protoreflect.FieldDescriptor) (set programSet, err error) {
+		set, err = compile(exprs, bldr.env, opts...)
+		if err != nil {
+			return set, err
+		}
+		for i := range set.programs {
+			set.programs[i].Path = []*validate.FieldPathElement{
+				validate.FieldPathElement_builder{
+					FieldNumber: new(fieldPathElement.GetFieldNumber()),
+					FieldType:   fieldPathElement.GetFieldType().Enum(),
+					FieldName:   new(fieldPathElement.GetFieldName()),
+					Index:       new(uint64(i)),
+				}.Build(),
+			}
+			set.programs[i].Descriptor = descriptor
+		}
+		return set, nil
+	}
+	compiledExpressions, err := compileWithPath(
+		expressions{
+			Rules: expressionsToRules(fieldRules.GetCelExpression()),
+		},
+		celExpressionField,
+		celExpressionDescriptor,
+	)
 	if err != nil {
 		return err
 	}
-	for i := range compiledExpressions {
-		compiledExpressions[i].Path = []*validate.FieldPathElement{
-			{
-				FieldNumber: proto.Int32(celRuleField.GetFieldNumber()),
-				FieldType:   celRuleField.GetFieldType().Enum(),
-				FieldName:   proto.String(celRuleField.GetFieldName()),
-				Subscript: &validate.FieldPathElement_Index{
-					Index: uint64(i), //nolint:gosec // indices are guaranteed to be non-negative
-				},
-			},
-		}
-		compiledExpressions[i].Descriptor = celRuleDescriptor
+	celRuleCompiledExpressions, err := compileWithPath(
+		expressions{
+			Rules: fieldRules.GetCel(),
+		},
+		celRuleField,
+		celRuleDescriptor,
+	)
+	if err != nil {
+		return err
 	}
-	if len(compiledExpressions) > 0 {
+	// Merge the two program sets. If cel rules were compiled, use their env
+	// since it has all the types registered.
+	compiledExpressions.programs = append(compiledExpressions.programs, celRuleCompiledExpressions.programs...)
+	if len(compiledExpressions.programs) > 0 {
+		compiledExpressions.env = cmp.Or(compiledExpressions.env, celRuleCompiledExpressions.env, bldr.env)
 		eval.Rules = append(eval.Rules,
 			celPrograms{
 				base:       newBase(eval),
@@ -451,6 +467,37 @@ func (bldr *builder) processStandardRules(
 		}
 	}
 
+	// make a copy of the rules because we're going to clear anything handled by native rules, leaving
+	// anything else to be handled by CEL rules. this allows us to fall back to CEL rules if there is no
+	// native rule (for example, when a new rule is added to the validate proto, but the native code hasn't
+	// been updated. we are making a copy because we don't want to modify the original rules in case they are
+	// reused (happens in some test cases, could happen in production code with dynamic messages).
+	rules = proto.CloneOf[*validate.FieldRules](rules)
+
+	// put behind a feature flag to allow for testing.
+	// it's easier to follow like this, don't break it up
+	//nolint:nestif
+	if !bldr.disableNativeRules {
+		// Try native Go evaluators for repeated list-level rules (min_items, max_items, unique).
+		if fdesc.IsList() && valEval.NestedRule == nil {
+			if native := tryNativeRepeatedRules(newBase(valEval), rules.GetRepeated()); native != nil {
+				valEval.Append(native)
+			}
+		}
+		// Try native Go evaluators for map-level rules (min_pairs, max_pairs).
+		if fdesc.IsMap() && valEval.NestedRule == nil {
+			if native := tryNativeMapRules(newBase(valEval), rules.GetMap()); native != nil {
+				valEval.Append(native)
+			}
+		}
+		// Try native Go evaluators for known simple rules before falling back to CEL.
+		if !fdesc.IsMap() && !fdesc.IsList() {
+			if native := bldr.tryNativeRules(fdesc, rules, valEval); native != nil {
+				valEval.Append(native)
+			}
+		}
+	}
+
 	stdRules, err := bldr.rules.Build(
 		bldr.env,
 		fdesc,
@@ -467,6 +514,71 @@ func (bldr *builder) processStandardRules(
 		programSet: stdRules,
 	})
 	return nil
+}
+
+func (bldr *builder) tryNativeRules(
+	fdesc protoreflect.FieldDescriptor,
+	rules *validate.FieldRules,
+	valEval *value,
+) evaluator {
+	if rules == nil {
+		return nil
+	}
+	base := newBase(valEval)
+	var native evaluator
+	switch fdesc.Kind() {
+	case protoreflect.Int32Kind:
+		native = tryBuildNativeInt32Rules(base, rules.GetInt32())
+	case protoreflect.Sint32Kind:
+		native = tryBuildNativeSint32Rules(base, rules.GetSint32())
+	case protoreflect.Sfixed32Kind:
+		native = tryBuildNativeSfixed32Rules(base, rules.GetSfixed32())
+	case protoreflect.Int64Kind:
+		native = tryBuildNativeInt64Rules(base, rules.GetInt64())
+	case protoreflect.Sint64Kind:
+		native = tryBuildNativeSint64Rules(base, rules.GetSint64())
+	case protoreflect.Sfixed64Kind:
+		native = tryBuildNativeSfixed64Rules(base, rules.GetSfixed64())
+	case protoreflect.Uint32Kind:
+		native = tryBuildNativeUint32Rules(base, rules.GetUint32())
+	case protoreflect.Fixed32Kind:
+		native = tryBuildNativeFixed32Rules(base, rules.GetFixed32())
+	case protoreflect.Uint64Kind:
+		native = tryBuildNativeUint64Rules(base, rules.GetUint64())
+	case protoreflect.Fixed64Kind:
+		native = tryBuildNativeFixed64Rules(base, rules.GetFixed64())
+	case protoreflect.FloatKind:
+		native = tryBuildNativeFloatRules(base, rules.GetFloat())
+	case protoreflect.DoubleKind:
+		native = tryBuildNativeDoubleRules(base, rules.GetDouble())
+	case protoreflect.StringKind:
+		native = tryBuildNativeStringRules(base, rules.GetString())
+	case protoreflect.BoolKind:
+		native = tryBuildNativeBoolRules(base, rules.GetBool())
+	case protoreflect.EnumKind:
+		native = tryBuildNativeEnumRules(base, rules.GetEnum())
+	case protoreflect.BytesKind:
+		native = tryBuildNativeBytesRules(base, rules.GetBytes())
+	default:
+		return nil
+	}
+	if native == nil {
+		return nil
+	}
+	// processWrapperRules swaps in the inner "value" field as fdesc when
+	// building rules for a wrapper WKT (Int32Value, StringValue, ...), but
+	// leaves valEval.Descriptor pointing at the outer wrapper message field.
+	// Detect that here and wrap the native eval so it unwraps the wrapper
+	// message at runtime before calling val.Int()/Bytes()/etc.
+	if valEval.Descriptor != nil &&
+		(valEval.Descriptor.Kind() == protoreflect.MessageKind ||
+			valEval.Descriptor.Kind() == protoreflect.GroupKind) {
+		native = wrappedValueEval{
+			innerField: fdesc,
+			inner:      native,
+		}
+	}
+	return native
 }
 
 func (bldr *builder) processAnyRules(
@@ -580,8 +692,7 @@ func (bldr *builder) shouldIgnoreAlways(rules *validate.FieldRules) bool {
 }
 
 func (bldr *builder) shouldIgnoreEmpty(rules *validate.FieldRules) bool {
-	return rules.GetIgnore() == validate.Ignore_IGNORE_IF_UNPOPULATED ||
-		rules.GetIgnore() == validate.Ignore_IGNORE_IF_DEFAULT_VALUE
+	return rules.GetIgnore() == validate.Ignore_IGNORE_IF_ZERO_VALUE
 }
 
 func (bldr *builder) zeroValue(fdesc protoreflect.FieldDescriptor, forItems bool) protoreflect.Value {
@@ -624,4 +735,15 @@ func isPartOfMessageOneof(msgRules *validate.MessageRules, field protoreflect.Fi
 	return slices.ContainsFunc(msgRules.GetOneof(), func(oneof *validate.MessageOneofRule) bool {
 		return slices.Contains(oneof.GetFields(), string(field.Name()))
 	})
+}
+
+func expressionsToRules(expressions []string) []*validate.Rule {
+	rules := make([]*validate.Rule, 0, len(expressions))
+	for _, expr := range expressions {
+		rules = append(rules, validate.Rule_builder{
+			Id:         new(expr),
+			Expression: new(expr),
+		}.Build())
+	}
+	return rules
 }

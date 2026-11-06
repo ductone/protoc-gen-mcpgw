@@ -1,4 +1,4 @@
-// Copyright 2023-2024 Buf Technologies, Inc.
+// Copyright 2023-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,18 +16,17 @@ package protovalidate
 
 import (
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 //nolint:gochecknoglobals
 var (
 	requiredRuleDescriptor = (&validate.FieldRules{}).ProtoReflect().Descriptor().Fields().ByName("required")
-	requiredRulePath       = &validate.FieldPath{
+	requiredRulePath       = validate.FieldPath_builder{
 		Elements: []*validate.FieldPathElement{
 			fieldPathElement(requiredRuleDescriptor),
 		},
-	}
+	}.Build()
 )
 
 // field performs validation on a single message field, defined by its
@@ -42,8 +41,6 @@ type field struct {
 	HasPresence bool
 	// Whether validation should be ignored for certain conditions.
 	Ignore validate.Ignore
-	// Zero is the default or zero-value for this value's type
-	Zero protoreflect.Value
 	// Err stores if there was a compilation error constructing this evaluator. It is stored
 	// here so that it can be returned as part of validating this specific field.
 	Err error
@@ -59,13 +56,7 @@ func (f field) shouldIgnoreAlways() bool {
 // This field is generally true for nullable fields or fields with the
 // ignore_empty rule explicitly set.
 func (f field) shouldIgnoreEmpty() bool {
-	return f.HasPresence || f.Ignore == validate.Ignore_IGNORE_IF_UNPOPULATED || f.Ignore == validate.Ignore_IGNORE_IF_DEFAULT_VALUE
-}
-
-// shouldIgnoreDefault returns whether this field should skip validation on its zero value,
-// including for fields which have field presence and are set to the zero value.
-func (f field) shouldIgnoreDefault() bool {
-	return f.HasPresence && f.Ignore == validate.Ignore_IGNORE_IF_DEFAULT_VALUE
+	return f.HasPresence || f.Ignore == validate.Ignore_IGNORE_IF_ZERO_VALUE
 }
 
 func (f field) Evaluate(_ protoreflect.Message, val protoreflect.Value, cfg *validationConfig) error {
@@ -86,12 +77,12 @@ func (f field) EvaluateMessage(msg protoreflect.Message, cfg *validationConfig) 
 
 	if f.Required && !msg.Has(f.Value.Descriptor) {
 		return &ValidationError{Violations: []*Violation{{
-			Proto: &validate.Violation{
+			Proto: validate.Violation_builder{
 				Field:   fieldPath(f.Value.Descriptor),
 				Rule:    prefixRulePath(f.Value.NestedRule, requiredRulePath),
-				RuleId:  proto.String("required"),
-				Message: proto.String("value is required"),
-			},
+				RuleId:  new("required"),
+				Message: new("value is required"),
+			}.Build(),
 			FieldValue:      protoreflect.Value{},
 			FieldDescriptor: f.Value.Descriptor,
 			RuleValue:       protoreflect.ValueOfBool(true),
@@ -103,11 +94,7 @@ func (f field) EvaluateMessage(msg protoreflect.Message, cfg *validationConfig) 
 		return nil
 	}
 
-	val := msg.Get(f.Value.Descriptor)
-	if f.shouldIgnoreDefault() && val.Equal(f.Zero) {
-		return nil
-	}
-	return f.Value.EvaluateField(msg, val, cfg, true)
+	return f.Value.EvaluateField(msg, msg.Get(f.Value.Descriptor), cfg, true)
 }
 
 func (f field) Tautology() bool {

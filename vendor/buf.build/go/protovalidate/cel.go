@@ -1,4 +1,4 @@
-// Copyright 2023-2024 Buf Technologies, Inc.
+// Copyright 2023-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,27 +27,24 @@ type celPrograms struct {
 }
 
 func (c celPrograms) Evaluate(_ protoreflect.Message, val protoreflect.Value, cfg *validationConfig) error {
-	err := c.Eval(val, cfg)
-	if err != nil {
-		var valErr *ValidationError
-		if errors.As(err, &valErr) {
-			for _, violation := range valErr.Violations {
-				violation.Proto.Field = c.fieldPath()
-				violation.Proto.Rule = c.rulePath(violation.Proto.GetRule())
-				violation.FieldValue = val
-				violation.FieldDescriptor = c.Descriptor
-			}
+	err := c.Eval(val, c.Descriptor, cfg)
+	if valErr, ok := errors.AsType[*ValidationError](err); ok {
+		for _, violation := range valErr.Violations {
+			violation.Proto.SetField(c.fieldPath())
+			violation.Proto.SetRule(c.rulePath(violation.Proto.GetRule()))
+			violation.FieldValue = val
+			violation.FieldDescriptor = c.Descriptor
 		}
 	}
 	return err
 }
 
 func (c celPrograms) EvaluateMessage(msg protoreflect.Message, cfg *validationConfig) error {
-	return c.Eval(protoreflect.ValueOfMessage(msg), cfg)
+	return c.Eval(protoreflect.ValueOfMessage(msg), nil, cfg)
 }
 
 func (c celPrograms) Tautology() bool {
-	return len(c.programSet) == 0
+	return len(c.programs) == 0
 }
 
 var (
