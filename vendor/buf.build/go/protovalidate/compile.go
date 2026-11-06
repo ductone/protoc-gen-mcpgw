@@ -1,4 +1,4 @@
-// Copyright 2023-2024 Buf Technologies, Inc.
+// Copyright 2023-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
-	"github.com/google/cel-go/cel"
+	"cel.dev/cel-go/cel"
 )
 
 // An expressions instance is a container for the information needed to compile
@@ -38,32 +38,32 @@ func compile(
 	envOpts ...cel.EnvOption,
 ) (set programSet, err error) {
 	if len(expressions.Rules) == 0 {
-		return nil, nil
+		return set, nil
 	}
 
+	set.env = env
 	if len(envOpts) > 0 {
-		env, err = env.Extend(envOpts...)
+		set.env, err = extendEnv(env, envOpts...)
 		if err != nil {
-			return nil, &CompilationError{cause: fmt.Errorf(
+			return set, &CompilationError{cause: fmt.Errorf(
 				"failed to extend environment: %w", err)}
 		}
 	}
 
-	set = make(programSet, len(expressions.Rules))
+	programs := make([]compiledProgram, len(expressions.Rules))
 	for i, rule := range expressions.Rules {
-		set[i].Source = rule
-		set[i].Path = expressions.RulePath
-
-		ast, err := compileAST(env, rule, expressions.RulePath)
+		var ast compiledAST
+		ast, err = compileAST(set.env, rule, expressions.RulePath)
 		if err != nil {
-			return nil, err
+			return set, err
 		}
 
-		set[i], err = ast.toProgram(env)
+		programs[i], err = ast.toProgram(set.env)
 		if err != nil {
-			return nil, err
+			return set, err
 		}
 	}
+	set.programs = programs
 	return set, nil
 }
 
@@ -81,17 +81,17 @@ func compileASTs(
 		return set, nil
 	}
 
+	if len(envOpts) > 0 {
+		env, err = extendEnv(env, envOpts...)
+		if err != nil {
+			return set, &CompilationError{cause: fmt.Errorf(
+				"failed to extend environment: %w", err)}
+		}
+	}
+
 	set = make([]compiledAST, len(expressions.Rules))
 	for i, rule := range expressions.Rules {
-		set[i].Env = env
-		if len(envOpts) > 0 {
-			set[i].Env, err = env.Extend(envOpts...)
-			if err != nil {
-				return set, &CompilationError{cause: fmt.Errorf(
-					"failed to extend environment: %w", err)}
-			}
-		}
-		set[i], err = compileAST(set[i].Env, rule, expressions.RulePath)
+		set[i], err = compileAST(env, rule, expressions.RulePath)
 		if err != nil {
 			return set, err
 		}

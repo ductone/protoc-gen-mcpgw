@@ -1,4 +1,4 @@
-// Copyright 2023-2024 Buf Technologies, Inc.
+// Copyright 2023-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import (
 	"strings"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -57,19 +56,19 @@ func (o messageOneof) EvaluateMessage(msg protoreflect.Message, cfg *validationC
 		}
 		if count > 1 {
 			err.Violations = append(err.Violations, &Violation{
-				Proto: &validate.Violation{
-					RuleId:  proto.String("message.oneof"),
-					Message: proto.String(fmt.Sprintf("only one of %s can be set", o.formatFields())),
-				},
+				Proto: validate.Violation_builder{
+					RuleId:  new("message.oneof"),
+					Message: new(fmt.Sprintf("only one of %s can be set", o.formatFields())),
+				}.Build(),
 			})
 			return err
 		}
 		if o.Required && count != 1 {
 			err.Violations = append(err.Violations, &Violation{
-				Proto: &validate.Violation{
-					RuleId:  proto.String("message.oneof"),
-					Message: proto.String(fmt.Sprintf("one of %s must be set", o.formatFields())),
-				},
+				Proto: validate.Violation_builder{
+					RuleId:  new("message.oneof"),
+					Message: new(fmt.Sprintf("one of %s must be set", o.formatFields())),
+				}.Build(),
 			})
 			return err
 		}

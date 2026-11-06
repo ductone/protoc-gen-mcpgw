@@ -1,4 +1,4 @@
-// Copyright 2023-2024 Buf Technologies, Inc.
+// Copyright 2023-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@ package protovalidate
 
 import (
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -24,12 +23,12 @@ import (
 var (
 	repeatedRuleDescriptor      = (&validate.FieldRules{}).ProtoReflect().Descriptor().Fields().ByName("repeated")
 	repeatedItemsRuleDescriptor = (&validate.RepeatedRules{}).ProtoReflect().Descriptor().Fields().ByName("items")
-	repeatedItemsRulePath       = &validate.FieldPath{
+	repeatedItemsRulePath       = validate.FieldPath_builder{
 		Elements: []*validate.FieldPathElement{
 			fieldPathElement(repeatedRuleDescriptor),
 			fieldPathElement(repeatedItemsRuleDescriptor),
 		},
-	}
+	}.Build()
 )
 
 // listItems performs validation on the elements of a repeated field.
@@ -54,12 +53,12 @@ func (r listItems) Evaluate(msg protoreflect.Message, val protoreflect.Value, cf
 	for i := range list.Len() {
 		itemErr := r.ItemRules.EvaluateField(msg, list.Get(i), cfg, true)
 		if itemErr != nil {
-			updateViolationPaths(itemErr, &validate.FieldPathElement{
-				FieldNumber: proto.Int32(r.FieldPathElement.GetFieldNumber()),
+			updateViolationPaths(itemErr, validate.FieldPathElement_builder{
+				FieldNumber: new(r.FieldPathElement.GetFieldNumber()),
 				FieldType:   r.base.FieldPathElement.GetFieldType().Enum(),
-				FieldName:   proto.String(r.FieldPathElement.GetFieldName()),
-				Subscript:   &validate.FieldPathElement_Index{Index: uint64(i)}, //nolint:gosec // indices are guaranteed to be non-negative
-			}, r.RulePrefix.GetElements())
+				FieldName:   new(r.FieldPathElement.GetFieldName()),
+				Index:       new(uint64(i)),
+			}.Build(), r.RulePrefix.GetElements())
 		}
 		if ok, err = mergeViolations(err, itemErr, cfg); !ok {
 			return err
